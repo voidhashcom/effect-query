@@ -31,10 +31,10 @@ jobs:
           node-version: 22.x
           registry-url: "https://registry.npmjs.org"
 
-      - run: npm install
+      - run: pnpm install
 
       - name: Build
-        run: npm build
+        run: pnpm build
 
       - name: Determine npm tag
         id: determine_npm_tag
