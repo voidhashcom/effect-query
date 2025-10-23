@@ -4,7 +4,7 @@
 
 # Effect Query
 
-Integration of Effect-ts with Tanstack Query. Run your Effects from Tanstack Query. Fully type-safe.
+Integration of Effect-ts with Tanstack Query. Run your Effects from Tanstack Query. Fully type-safe and compatible with Effect RPC and Effect HttpApi.
 
 ## Quick Start
 
@@ -76,6 +76,19 @@ function UpdateUserPage({ id }: { id: string }) {
 }
 ```
 
+# Usage with Effect HttpApi
+
+```ts
+// src/utils/effect-query.ts
+import { createEffectQuery } from "effect-query";
+import { Layer } from "effect";
+import { HttpApiClient } from "@effect/http-api";
+
+// TODO:
+
+export const eq = createEffectQuery(Layer.empty);
+```
+
 # Usage with Effect RPC
 
 ```ts
@@ -85,29 +98,31 @@ import { Layer } from "effect";
 import { FetchHttpClient } from "@effect/platform";
 import { RpcClient, RpcSerialization } from "@effect/rpc";
 
+const API_DOMAIN = "https://api.example.com";
+
+// Create RpcProtocol layer for your RPC client
 export const RpcProtocolLive = RpcClient.layerProtocolHttp({
   url: `${API_DOMAIN}/rpc`,
 }).pipe(
   Layer.provide([
     // use fetch for http requests
-    FetchHttpClient.layer.pipe(
-      Layer.provide(
-        Layer.succeed(FetchHttpClient.RequestInit, {
-          credentials: "include",
-        })
-      )
-    ),
+    FetchHttpClient.layer
     // use ndjson for serialization
     RpcSerialization.layerNdjson,
   ])
 );
 
-export const effectQuery = createEffectQuery(Layer.empty);
+// Create your RPC client
+export const MyRpcClient = RpcClient.make(RpcGroups);
+
+// Create a final layer for your Effect Query
+export const LiveLayer = Layer.mergeAll(RpcProtocolLive);
+
+export const eq = createEffectQuery(LiveLayer);
 ```
 
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://voidhash.com">Voidhash s.r.o.</a>
+  Made with ❤️ by <a href="https://voidhash.com">Voidhash</a>
 </p>
-```
