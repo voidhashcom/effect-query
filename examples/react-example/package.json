@@ -1,0 +1,32 @@
+{
+  "name": "@effect-query/react-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "react-router dev",
+    "typecheck": "react-router typegen && tsc"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.92.1",
+    "@tanstack/react-query": "^5.90.5",
+    "@react-router/node": "^7.9.2",
+    "@react-router/serve": "^7.9.2",
+    "effect": "^3.18.4",
+    "effect-query": "workspace:*",
+    "isbot": "^5.1.31",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router": "^7.9.2"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^7.9.2",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^22",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
