@@ -73,13 +73,20 @@ export function createEffectQuery<Input>(
 
   const runtime = ManagedRuntime.make(layer);
   const runner =
-    <A, E, R extends RuntimeContext>(span: string) =>
+    <A, E, R extends RuntimeContext>(
+      span: string,
+      options: { signal?: AbortSignal } = {}
+    ) =>
     (effect: Effect.Effect<A, E, R>): Promise<Exit.Exit<A, E>> =>
-      effect.pipe(
-        Effect.withSpan(span),
-        Effect.scoped,
-        Effect.tapErrorCause(Effect.logError),
-        runtime.runPromiseExit
+      runtime.runPromiseExit(
+        effect.pipe(
+          Effect.withSpan(span),
+          Effect.scoped,
+          Effect.tapErrorCause(Effect.logError)
+        ),
+        {
+          signal: options.signal,
+        }
       );
 
   return {
@@ -99,7 +106,9 @@ export function createEffectQuery<Input>(
         const effect = (
           options.queryFn as EffectfulQueryFunction<TData, E, R, TQueryKey>
         )(context);
-        const result = await effect.pipe(runner(spanName));
+        const result = await effect.pipe(
+          runner(spanName, { signal: context.signal })
+        );
         return Exit.match(result, {
           onSuccess: (value) => value,
           onFailure: (cause) => {
