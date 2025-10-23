@@ -1,0 +1,48 @@
+{
+	"name": "effect-query",
+	"version": "0.0.1",
+	"description": "Effect adapter for Tanstack Query",
+	"main": "index.js",
+	"scripts": {
+		"build": "tsdown",
+		"dev": "tsdown --watch",
+		"lint": "biome check .",
+		"typecheck": "tsc --noEmit --pretty"
+	},
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			},
+			"require": {
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
+			}
+		}
+	},
+	"files": [
+		"dist",
+		"src",
+		"README.md",
+		"package.json",
+		"!**/*.test.*",
+		"!**/__tests__"
+	],
+	"author": "Dominik Vít <dominik@voidhash.com>",
+	"license": "MIT",
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.6",
+		"@tanstack/react-query": "^5.90.5",
+		"effect": "^3.18.4",
+		"react": "^19.2.0",
+		"tsdown": "^0.15.9",
+		"ultracite": "^5.6.4",
+		"vitest": "^4.0.1"
+	},
+	"peerDependencies": {
+		"@tanstack/react-query": "^5.90.5",
+		"effect": "^3.18.4",
+		"react": "^19.2.0"
+	}
+}
