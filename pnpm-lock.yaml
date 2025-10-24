@@ -93,9 +93,6 @@ importers:
       effect:
         specifier: ^3.18.4
         version: 3.18.4
-      react:
-        specifier: ^19.2.0
-        version: 19.2.0
       tsdown:
         specifier: ^0.15.9
         version: 0.15.9(typescript@5.9.3)

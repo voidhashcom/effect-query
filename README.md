@@ -13,7 +13,7 @@ Integration of Effect-ts with Tanstack Query. Run your Effects from Tanstack Que
 npm install effect-query
 
 # Install peer dependencies (if not already installed)
-npm install @tanstack/react-query effect react
+npm install @tanstack/react-query effect
 
 ```
 

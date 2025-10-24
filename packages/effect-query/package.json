@@ -37,14 +37,12 @@
     "@biomejs/biome": "^2.2.6",
     "@tanstack/react-query": "^5.90.5",
     "effect": "^3.18.4",
-    "react": "^19.2.0",
     "tsdown": "^0.15.9",
     "ultracite": "^5.6.4",
     "vitest": "^4.0.1"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.90.5",
-    "effect": "^3.18.4",
-    "react": "^19.2.0"
+    "effect": "^3.18.4"
   }
 }
