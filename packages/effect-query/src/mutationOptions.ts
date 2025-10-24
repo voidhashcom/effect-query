@@ -5,6 +5,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { Cause, type Effect, Exit } from "effect";
+import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
 
@@ -41,7 +42,8 @@ export type EffectQueryMutationOptionsInput<
  * @internal
  */
 export function effectQueryMutationOptions<
-  TRuntimeInput,
+  // biome-ignore lint/suspicious/noExplicitAny: generic
+  TManagedRuntime extends ManagedRuntime<any, never>,
   TFnResult,
   TFnErrorResult extends { _tag: string },
   TFnRequirements,
@@ -54,7 +56,7 @@ export function effectQueryMutationOptions<
     TVariables
   >,
   context: {
-    runner: EffectQueryRunner<TRuntimeInput>;
+    runner: EffectQueryRunner<TManagedRuntime>;
   }
 ) {
   const spanName = inputOptions.mutationKey;

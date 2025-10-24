@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/style/noMagicNumbers: <explanation> */
-/** biome-ignore-all lint/correctness/noNestedComponentDefinitions: <explanation> */
+/** biome-ignore-all lint/style/noMagicNumbers: dev example */
+/** biome-ignore-all lint/correctness/noNestedComponentDefinitions: not components */
 import { useQuery } from "@tanstack/react-query";
 import { Cause, Data, Effect, Layer } from "effect";
 import { createEffectQuery } from "effect-query";

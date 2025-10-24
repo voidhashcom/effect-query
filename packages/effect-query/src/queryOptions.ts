@@ -8,6 +8,7 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { Cause, type Effect, Exit } from "effect";
+import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
 import type { EffectQueryQueryKey } from "./types";
@@ -82,7 +83,8 @@ export type EffectQueryOptionsInput<
  * @internal
  */
 export function effectQueryQueryOptions<
-  TRuntimeInput,
+  // biome-ignore lint/suspicious/noExplicitAny: generic
+  TManagedRuntime extends ManagedRuntime<any, never>,
   TFnResult,
   TFnErrorResult extends { _tag: string },
   TFnRequirements,
@@ -93,7 +95,7 @@ export function effectQueryQueryOptions<
     TFnRequirements
   >,
   context: {
-    runner: EffectQueryRunner<TRuntimeInput>;
+    runner: EffectQueryRunner<TManagedRuntime>;
     signal?: AbortSignal;
   }
 ) {

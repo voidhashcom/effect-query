@@ -1,9 +1,12 @@
-import { Effect, type Exit, type Scope } from "effect";
+import { Effect, type Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
 
-export class EffectQueryRunner<TRuntimeInput> {
-  readonly runtime: ManagedRuntime<TRuntimeInput, never>;
-  constructor(runtime: ManagedRuntime<TRuntimeInput, never>) {
+export class EffectQueryRunner<
+  // biome-ignore lint/suspicious/noExplicitAny: generic
+  TManagedRuntime extends ManagedRuntime<any, never>,
+> {
+  readonly runtime: TManagedRuntime;
+  constructor(runtime: TManagedRuntime) {
     this.runtime = runtime;
   }
 
@@ -12,21 +15,11 @@ export class EffectQueryRunner<TRuntimeInput> {
     span: string,
     options: { signal?: AbortSignal } = {}
   ): Promise<Exit.Exit<TResult, TError>> {
-    // This is a workaround to allow the effect to run without a scope (it will be provided by the caller)
-    const effectToRun = effect as Effect.Effect<
-      TResult,
-      TError,
-      TRuntimeInput | Scope.Scope
-    >;
-    return await this.runtime.runPromiseExit(
-      effectToRun.pipe(
-        Effect.withSpan(span),
-        Effect.scoped,
-        Effect.tapErrorCause(Effect.logError)
-      ),
-      {
-        signal: options.signal,
-      }
+    const runnable = Effect.scoped(
+      effect.pipe(Effect.withSpan(span), Effect.tapErrorCause(Effect.logError))
     );
+    return await this.runtime.runPromiseExit(runnable, {
+      signal: options.signal,
+    });
   }
 }

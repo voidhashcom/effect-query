@@ -1,6 +1,6 @@
-/** biome-ignore-all lint/style/noMagicNumbers: <explanation> */
-/** biome-ignore-all lint/correctness/noNestedComponentDefinitions: <explanation> */
-/** biome-ignore-all lint/suspicious/noAlert: <explanation> */
+/** biome-ignore-all lint/style/noMagicNumbers: dev example */
+/** biome-ignore-all lint/correctness/noNestedComponentDefinitions: not components */
+/** biome-ignore-all lint/suspicious/noAlert: dev example */
 import { useMutation } from "@tanstack/react-query";
 import { Cause, Console, Data, Duration, Effect, Layer } from "effect";
 import { createEffectQuery } from "effect-query";

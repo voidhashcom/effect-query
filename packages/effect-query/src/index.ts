@@ -32,7 +32,7 @@ export function createEffectQuery<Input>(
       >
     ) =>
       effectQueryQueryOptions<
-        Input,
+        typeof runtime,
         TFnResult,
         TFnErrorResult,
         TFnRequirements
@@ -57,7 +57,7 @@ export function createEffectQuery<Input>(
       >
     ) =>
       effectInfiniteQueryOptions<
-        Input,
+        typeof runtime,
         TFnResult,
         TFnErrorResult,
         TFnRequirements
@@ -76,7 +76,7 @@ export function createEffectQuery<Input>(
       >
     ) =>
       effectQueryMutationOptions<
-        Input,
+        typeof runtime,
         TFnResult,
         TFnErrorResult,
         TFnRequirements,
