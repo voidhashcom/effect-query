@@ -16,7 +16,7 @@ import {
   ManagedRuntime,
   type Scope,
 } from "effect";
-import { EffectQueryError } from "./errors";
+import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 
 export function createEffectQuery<Input>(
   layer: Layer.Layer<Input, never, never>
@@ -92,7 +92,7 @@ export function createEffectQuery<Input>(
   return {
     queryOptions: <
       TData,
-      E,
+      E extends { _tag: string },
       R extends RuntimeContext,
       TQueryKey extends QueryKey = QueryKey,
     >(
@@ -112,7 +112,11 @@ export function createEffectQuery<Input>(
         return Exit.match(result, {
           onSuccess: (value) => value,
           onFailure: (cause) => {
-            throw new EffectQueryError(Cause.pretty(cause), cause);
+            if (cause._tag === "Fail") {
+              const failure = cause.error;
+              throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
+            }
+            throw new EffectQueryDefect(Cause.pretty(cause), cause);
           },
         });
       };
@@ -122,12 +126,19 @@ export function createEffectQuery<Input>(
         queryFn,
       }) as UseQueryOptions<
         TData,
-        E extends never ? never : EffectQueryError<Cause.Cause<E>>,
+        [E] extends [never]
+          ? EffectQueryDefect<unknown>
+          : EffectQueryFailure<E> | EffectQueryDefect<unknown>,
         TData,
         TQueryKey
       >;
     },
-    mutationOptions: <TData, E, TVariables, R extends RuntimeContext>(
+    mutationOptions: <
+      TData,
+      E extends { _tag: string },
+      TVariables,
+      R extends RuntimeContext,
+    >(
       options: EffectfulMutationOptions<TData, E, TVariables, R>
     ) => {
       const spanName = options.mutationKey;
@@ -146,7 +157,11 @@ export function createEffectQuery<Input>(
         return Exit.match(result, {
           onSuccess: (value) => value,
           onFailure: (cause) => {
-            throw new EffectQueryError(Cause.pretty(cause), cause);
+            if (cause._tag === "Fail") {
+              const failure = cause.error;
+              throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
+            }
+            throw new EffectQueryDefect(Cause.pretty(cause), cause);
           },
         });
       };
@@ -156,7 +171,9 @@ export function createEffectQuery<Input>(
         mutationFn,
       }) as UseMutationOptions<
         TData,
-        E extends never ? never : EffectQueryError<Cause.Cause<E>>,
+        [E] extends [never]
+          ? never
+          : EffectQueryFailure<E> | EffectQueryDefect<unknown>,
         TVariables
       >;
     },

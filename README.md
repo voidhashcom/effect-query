@@ -76,6 +76,49 @@ function UpdateUserPage({ id }: { id: string }) {
 }
 ```
 
+# Error Handling
+
+When your Effect fails, the error object includes a `match` function that lets you handle different error types in a type-safe manner. When using match, the `OrElse` case is used as a catch-all for all the remaining unhandled failures and for defects. We are not able to fully check if defects can occur and therefore `OrElse` is required.
+
+```tsx
+function Examle() {
+  const { data, status, error } = useQuery({
+    /** ... */
+  });
+
+  if (status === "error" && error) {
+    return error.match({
+      QueryError: (queryError) => <div>Query error: {queryError.hello}</div>,
+      TestError: (testError) => <div>Test error: {testError.message}</div>,
+      OrElse: (cause) => <div>Error: {Cause.pretty(cause)}</div>,
+    });
+  }
+}
+```
+
+Match can be also used to handle errors during mutations.
+
+## Mutation Error Handling
+
+The same pattern works for mutations, allowing you to handle errors in callbacks:
+
+```tsx
+export default function UpdateUserPage({ id }: { id: string }) {
+  const { mutate } = useMutation({
+    /*...*/
+    onError: (error) =>
+      error.match({
+        UserUpdateError: (userUpdateError) => {
+          alert(`${userUpdateError.message}`);
+        },
+        OrElse: (cause) => {
+          alert(`Error updating user: ${Cause.pretty(cause)}`);
+        },
+      }),
+  });
+}
+```
+
 # Usage with Effect HttpApi
 
 ```ts
@@ -83,10 +126,26 @@ function UpdateUserPage({ id }: { id: string }) {
 import { createEffectQuery } from "effect-query";
 import { Layer } from "effect";
 import { HttpApiClient } from "@effect/http-api";
+import { HttpApiSpec } from "/http-api-spec";
 
-// TODO:
+// Create your ApiClient service
+export class ApiClient extends Effect.Service<ApiClient>()(
+  'example/ApiClient',
+  {
+    dependencies: [],
+    effect: HttpApiClient.make(HttpApiSpec, {
+      baseUrl: "https://api.example.com"
+    });
+  }
+) {}
 
-export const eq = createEffectQuery(Layer.empty);
+// Create a final layer for your Effect Query
+export const LiveLayer = Layer.mergeAll(ApiClient.Default);
+
+
+export const eq = createEffectQuery(LiveLayer);
+
+
 ```
 
 # Usage with Effect RPC

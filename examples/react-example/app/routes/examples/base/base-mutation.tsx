@@ -1,7 +1,8 @@
 /** biome-ignore-all lint/style/noMagicNumbers: <explanation> */
+/** biome-ignore-all lint/correctness/noNestedComponentDefinitions: <explanation> */
 /** biome-ignore-all lint/suspicious/noAlert: <explanation> */
 import { useMutation } from "@tanstack/react-query";
-import { Console, Data, Duration, Effect, Layer } from "effect";
+import { Cause, Console, Data, Duration, Effect, Layer } from "effect";
 import { createEffectQuery } from "effect-query";
 
 export const eq = createEffectQuery(Layer.empty);
@@ -29,9 +30,15 @@ const updateUserOptions = eq.mutationOptions({
 export default function UpdateUserPage({ id }: { id: string }) {
   const { mutate } = useMutation({
     ...updateUserOptions,
-    onError: (error) => {
-      alert(`Error updating user: ${error.message}`);
-    },
+    onError: (error) =>
+      error.match({
+        UserUpdateError: (userUpdateError) => {
+          alert(`${userUpdateError.message}`);
+        },
+        OrElse: (cause) => {
+          alert(`Error updating user: ${Cause.pretty(cause)}`);
+        },
+      }),
     onSuccess: () => {
       alert("User updated!");
     },
