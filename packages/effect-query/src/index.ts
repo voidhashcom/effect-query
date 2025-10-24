@@ -1,183 +1,86 @@
+import { type Layer, ManagedRuntime } from "effect";
 import {
-  type MutationFunction,
-  mutationOptions,
-  type QueryFunction,
-  type QueryFunctionContext,
-  queryOptions,
-  type skipToken,
-  type UseMutationOptions,
-  type UseQueryOptions,
-} from "@tanstack/react-query";
+  type EffectInfiniteQueryOptionsInput,
+  effectInfiniteQueryOptions,
+} from "./infiniteQueryOptions";
 import {
-  Cause,
-  Effect,
-  Exit,
-  type Layer,
-  ManagedRuntime,
-  type Scope,
-} from "effect";
-import { EffectQueryDefect, EffectQueryFailure } from "./errors";
+  type EffectQueryMutationOptionsInput,
+  effectQueryMutationOptions,
+} from "./mutationOptions";
+import {
+  type EffectQueryOptionsInput,
+  effectQueryQueryOptions,
+} from "./queryOptions";
+import { EffectQueryRunner } from "./runner";
 
 export function createEffectQuery<Input>(
   layer: Layer.Layer<Input, never, never>
 ) {
-  type RuntimeContext = Input | Scope.Scope;
-
-  type EffectfulMutationFunction<
-    TData,
-    E,
-    TVariables,
-    R extends RuntimeContext,
-  > = (variables: TVariables) => Effect.Effect<TData, E, R>;
-
-  type EffectfulMutationOptions<
-    TData,
-    E,
-    TVariables,
-    R extends RuntimeContext,
-  > = Omit<
-    UseMutationOptions<TData, Error, TVariables>,
-    "mutationKey" | "mutationFn"
-  > & {
-    mutationKey: string;
-    mutationFn:
-      | EffectfulMutationFunction<TData, E, TVariables, R>
-      | typeof skipToken;
-  };
-
-  type EffectfulQueryFunction<
-    TData,
-    E,
-    R,
-    TQueryKey extends QueryKey = QueryKey,
-    TPageParam = never,
-  > = (
-    context: QueryFunctionContext<TQueryKey, TPageParam>
-  ) => Effect.Effect<TData, E, R>;
-
-  type EffectfulQueryOptions<
-    TData,
-    TError,
-    R,
-    TQueryKey extends QueryKey = QueryKey,
-    TPageParam = never,
-  > = Omit<
-    UseQueryOptions<TData, TError, TData, TQueryKey>,
-    "queryKey" | "queryFn"
-  > & {
-    queryKey: TQueryKey;
-    queryFn:
-      | EffectfulQueryFunction<TData, TError, R, TQueryKey, TPageParam>
-      | typeof skipToken;
-  };
-
   const runtime = ManagedRuntime.make(layer);
-  const runner =
-    <A, E, R extends RuntimeContext>(
-      span: string,
-      options: { signal?: AbortSignal } = {}
-    ) =>
-    (effect: Effect.Effect<A, E, R>): Promise<Exit.Exit<A, E>> =>
-      runtime.runPromiseExit(
-        effect.pipe(
-          Effect.withSpan(span),
-          Effect.scoped,
-          Effect.tapErrorCause(Effect.logError)
-        ),
-        {
-          signal: options.signal,
-        }
-      );
+  const runner = new EffectQueryRunner(runtime);
 
   return {
     queryOptions: <
-      TData,
-      E extends { _tag: string },
-      R extends RuntimeContext,
-      TQueryKey extends QueryKey = QueryKey,
+      TFnResult,
+      TFnErrorResult extends { _tag: string },
+      TFnRequirements,
     >(
-      options: EffectfulQueryOptions<TData, E, R, TQueryKey>
-    ) => {
-      const [spanName] = options.queryKey;
-
-      const queryFn: QueryFunction<TData, TQueryKey> = async (
-        context: QueryFunctionContext<TQueryKey>
-      ) => {
-        const effect = (
-          options.queryFn as EffectfulQueryFunction<TData, E, R, TQueryKey>
-        )(context);
-        const result = await effect.pipe(
-          runner(spanName, { signal: context.signal })
-        );
-        return Exit.match(result, {
-          onSuccess: (value) => value,
-          onFailure: (cause) => {
-            if (cause._tag === "Fail") {
-              const failure = cause.error;
-              throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
-            }
-            throw new EffectQueryDefect(Cause.pretty(cause), cause);
-          },
-        });
-      };
-
-      return queryOptions({
-        ...options,
-        queryFn,
-      }) as UseQueryOptions<
-        TData,
-        [E] extends [never]
-          ? EffectQueryDefect<unknown>
-          : EffectQueryFailure<E> | EffectQueryDefect<unknown>,
-        TData,
-        TQueryKey
-      >;
-    },
+      options: EffectQueryOptionsInput<
+        TFnResult,
+        TFnErrorResult,
+        TFnRequirements
+      >
+    ) =>
+      effectQueryQueryOptions<
+        Input,
+        TFnResult,
+        TFnErrorResult,
+        TFnRequirements
+      >(
+        {
+          queryKey: options.queryKey,
+          queryFn: options.queryFn,
+        },
+        {
+          runner,
+        }
+      ),
+    infiniteQueryOptions: <
+      TFnResult,
+      TFnErrorResult extends { _tag: string },
+      TFnRequirements,
+    >(
+      options: EffectInfiniteQueryOptionsInput<
+        TFnResult,
+        TFnErrorResult,
+        TFnRequirements
+      >
+    ) =>
+      effectInfiniteQueryOptions<
+        Input,
+        TFnResult,
+        TFnErrorResult,
+        TFnRequirements
+      >(options, { runner }),
     mutationOptions: <
-      TData,
-      E extends { _tag: string },
+      TFnResult,
+      TFnErrorResult extends { _tag: string },
+      TFnRequirements,
       TVariables,
-      R extends RuntimeContext,
     >(
-      options: EffectfulMutationOptions<TData, E, TVariables, R>
-    ) => {
-      const spanName = options.mutationKey;
-      const mutationFn: MutationFunction<TData, TVariables> = async (
-        variables: TVariables
-      ) => {
-        const effect = (
-          options.mutationFn as EffectfulMutationFunction<
-            TData,
-            E,
-            TVariables,
-            R
-          >
-        )(variables);
-        const result = await effect.pipe(runner(spanName));
-        return Exit.match(result, {
-          onSuccess: (value) => value,
-          onFailure: (cause) => {
-            if (cause._tag === "Fail") {
-              const failure = cause.error;
-              throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
-            }
-            throw new EffectQueryDefect(Cause.pretty(cause), cause);
-          },
-        });
-      };
-
-      return mutationOptions({
-        ...options,
-        mutationFn,
-      }) as UseMutationOptions<
-        TData,
-        [E] extends [never]
-          ? never
-          : EffectQueryFailure<E> | EffectQueryDefect<unknown>,
+      options: EffectQueryMutationOptionsInput<
+        TFnResult,
+        TFnErrorResult,
+        TFnRequirements,
         TVariables
-      >;
-    },
+      >
+    ) =>
+      effectQueryMutationOptions<
+        Input,
+        TFnResult,
+        TFnErrorResult,
+        TFnRequirements,
+        TVariables
+      >(options, { runner }),
   };
 }
-
-type QueryKey = readonly [string, string, Record<string, unknown>?];
