@@ -126,7 +126,7 @@ export default function UpdateUserPage({ id }: { id: string }) {
 import { createEffectQuery } from "effect-query";
 import { Layer } from "effect";
 import { HttpApiClient } from "@effect/http-api";
-import { HttpApiSpec } from "/http-api-spec";
+import { HttpApiSpec } from "./http-api-spec";
 
 // Create your ApiClient service
 export class ApiClient extends Effect.Service<ApiClient>()(
@@ -142,8 +142,20 @@ export class ApiClient extends Effect.Service<ApiClient>()(
 // Create a final layer for your Effect Query
 export const LiveLayer = Layer.mergeAll(ApiClient.Default);
 
-
 export const eq = createEffectQuery(LiveLayer);
+
+// Use it in your components
+export default function HomeRoute() {
+  const { data, status, error } = useQuery(
+    eq.queryOptions({
+      queryKey: ["example", "hello-world"],
+      queryFn: () => Effect.gen(function* () {
+        const apiClient = yield* ApiClient;
+        return yield* apiClient.hello.helloWorld({ /* ... */ });
+      }),
+    })
+  );
+}
 
 
 ```
@@ -171,13 +183,34 @@ export const RpcProtocolLive = RpcClient.layerProtocolHttp({
   ])
 );
 
-// Create your RPC client
-export const MyRpcClient = RpcClient.make(RpcGroups);
+// Create your ApiClient service
+export class MyRpcClient extends Effect.Service<MyRpcClient>()(
+  'example/MyRpcClient',
+  {
+    dependencies: [],
+    scoped: RpcClient.make(RpcGroups)
+  }
+) {}
 
 // Create a final layer for your Effect Query
-export const LiveLayer = Layer.mergeAll(RpcProtocolLive);
+export const LiveLayer = MyRpcClient.Default.pipe(
+  Layer.provideMerge(RpcProtocolLive)
+);
 
 export const eq = createEffectQuery(LiveLayer);
+
+// Use it in your components
+export default function HomeRoute() {
+  const { data, status, error } = useQuery(
+    eq.queryOptions({
+      queryKey: ["example", "hello-world"],
+      queryFn: () => Effect.gen(function* () {
+        const rpcClient = yield* MyRpcClient;
+        return yield* rpcClient.HelloWorld()
+      }),
+    })
+  );
+}
 ```
 
 ---
