@@ -17,7 +17,7 @@ npm install @tanstack/react-query effect
 
 ```
 
-** Read the full documentation [here](https://github.com/voidhashcom/effect-query) **
+### Read the full documentation [here](https://github.com/voidhashcom/effect-query)
 
 <p align="center">
   Made with ❤️ by <a href="https://voidhash.com">Voidhash</a>
