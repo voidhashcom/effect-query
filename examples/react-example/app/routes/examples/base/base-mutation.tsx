@@ -2,10 +2,20 @@
 /** biome-ignore-all lint/correctness/noNestedComponentDefinitions: not components */
 /** biome-ignore-all lint/suspicious/noAlert: dev example */
 import { useMutation } from "@tanstack/react-query";
-import { Cause, Console, Data, Duration, Effect, Layer } from "effect";
-import { createEffectQuery } from "effect-query";
+import {
+  Cause,
+  Console,
+  Data,
+  Duration,
+  Effect,
+  Layer,
+  ManagedRuntime,
+} from "effect";
+import { createEffectQueryFromManagedRuntime } from "effect-query";
 
-export const eq = createEffectQuery(Layer.empty);
+// export const eq = createEffectQuery(Layer.empty);
+export const managedRuntime = ManagedRuntime.make(Layer.empty);
+export const eq = createEffectQueryFromManagedRuntime(managedRuntime);
 
 class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
   message: string;
