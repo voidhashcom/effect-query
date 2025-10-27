@@ -1,6 +1,6 @@
 {
   "name": "effect-query",
-  "version": "0.1.1",
+  "version": "0.1.2-beta.1",
   "description": "Effect adapter for Tanstack Query",
   "repository": {
     "type": "git",
