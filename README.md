@@ -1,8 +1,15 @@
 <p align="center">
-    <img src="./banner.png" alt="Better Auth Logo">
+    <img src="./banner.png" alt="effect-query logo">
 </p>
 
 # Effect Query
+
+<a href="https://www.npmjs.com/package/effect-query" target="\_parent">
+  <img alt="" src="https://img.shields.io/npm/dm/effect-query.svg" alt="npm downloads" />
+</a>
+ <a href="https://github.com/voidhashcom/effect-query/" target="\_parent">
+  <img alt="" src="https://img.shields.io/github/stars/voidhashcom/effect-query.svg?style=social&label=Star" alt="GitHub stars" />
+</a>
 
 Integration of Effect-ts with Tanstack Query. Run your Effects from Tanstack Query. Fully type-safe and compatible with Effect RPC and Effect HttpApi.
 
