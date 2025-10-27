@@ -13,7 +13,6 @@ import {
 } from "effect";
 import { createEffectQueryFromManagedRuntime } from "effect-query";
 
-// export const eq = createEffectQuery(Layer.empty);
 export const managedRuntime = ManagedRuntime.make(Layer.empty);
 export const eq = createEffectQueryFromManagedRuntime(managedRuntime);
 
