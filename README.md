@@ -32,6 +32,13 @@ import { createEffectQuery } from "effect-query";
 import { Layer } from "effect";
 
 export const eq = createEffectQuery(Layer.empty);
+
+// Alternative: Create from effect-query from ManagedRuntime instead of Layer
+import { createEffectQueryFromManagedRuntime } from "effect-query";
+import { Layer, ManagedRuntime } from "effect";
+
+const managedRuntime = ManagedRuntime.make(Layer.empty);
+export const eq = createEffectQueryFromManagedRuntime(managedRuntime);
 ```
 
 # Query Example
