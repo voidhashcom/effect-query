@@ -1,10 +1,8 @@
 import {
-  type DefinedInitialDataOptions,
   type QueryFunction,
   type QueryFunctionContext,
   queryOptions,
-  type UndefinedInitialDataOptions,
-  type UseQueryOptions,
+  type SolidQueryOptions,
 } from "@tanstack/solid-query";
 import { Cause, type Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
@@ -27,14 +25,18 @@ type EffectQueryUndefinedInitialDataOptions<
   TError,
   TData = TQueryFnData,
   TQueryKey extends EffectQueryQueryKey = EffectQueryQueryKey,
-> = UndefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey>;
+> = SolidQueryOptions<TQueryFnData, TError, TData, TQueryKey> & {
+  initialData?: undefined;
+};
 
 type EffectQueryDefinedInitialDataOptions<
   TQueryFnData,
   TError,
   TData = TQueryFnData,
   TQueryKey extends EffectQueryQueryKey = EffectQueryQueryKey,
-> = DefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey>;
+> = SolidQueryOptions<TQueryFnData, TError, TData, TQueryKey> & {
+  initialData: TQueryFnData | (() => TQueryFnData);
+};
 
 export type EffectQueryOptionsInput<
   TFnResult,
@@ -111,7 +113,7 @@ export function effectQueryQueryOptions<
     ...inputOptions,
     queryKey: inputOptions.queryKey,
     queryFn,
-  }) as unknown as UseQueryOptions<
+  }) as SolidQueryOptions<
     TFnResult,
     [TFnErrorResult] extends [never]
       ? EffectQueryDefect<unknown>
