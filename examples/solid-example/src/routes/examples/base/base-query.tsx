@@ -11,7 +11,7 @@ class TestError extends Data.TaggedError("TestError")<{ message: string }> {}
 export const eq = createEffectQuery(Layer.empty);
 
 export default function BaseQueryRoute() {
-  const query = useQuery(
+  const query = useQuery(() =>
     eq.queryOptions({
       queryKey: ["namespace", "action"],
       queryFn: () =>
