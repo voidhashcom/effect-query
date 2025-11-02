@@ -76,12 +76,13 @@ import { useMutation } from "@tanstack/react-query";
 
 // You can move this outside of the component and even share it with other components
 const updateUserOptions = eq.mutationOptions({
-  mutationKey: "updateUserOptions"
-  mutationFn: () => Effect.gen(function* () {
-    const user = yield* Effect.sleep(1000);
-    yield* Console.log("Updating user...");
-    return Effect.succeed("User updated");
-  }),
+  mutationKey: ["updateUserOptions"],
+  mutationFn: () =>
+    Effect.gen(function* () {
+      const user = yield* Effect.sleep(1000);
+      yield* Console.log("Updating user...");
+      return Effect.succeed("User updated");
+    }),
 });
 
 function UpdateUserPage({ id }: { id: string }) {
