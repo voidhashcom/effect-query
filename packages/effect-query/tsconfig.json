@@ -1,8 +1,8 @@
 {
-	"extends": "./tsconfig.build.json",
-	"include": ["src"],
-	"compilerOptions": {
-		"allowJs": false,
-		"strictNullChecks": true
-	}
+  "extends": "./tsconfig.build.json",
+  "include": ["src", "test"],
+  "compilerOptions": {
+    "allowJs": false,
+    "strictNullChecks": true
+  }
 }

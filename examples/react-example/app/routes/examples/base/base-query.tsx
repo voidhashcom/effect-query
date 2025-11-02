@@ -7,22 +7,26 @@ import { createEffectQuery } from "effect-query";
 class QueryError extends Data.TaggedError("QueryError")<{ hello: string }> {}
 class TestError extends Data.TaggedError("TestError")<{ message: string }> {}
 export const eq = createEffectQuery(Layer.empty);
+
+const queryOptions = eq.queryOptions({
+  queryKey: ["namespace", "action"],
+  queryFn: () =>
+    Effect.gen(function* () {
+      if (Math.random() < 0.5) {
+        return yield* Effect.fail(new QueryError({ hello: "world" }));
+      }
+      if (Math.random() < 0.5) {
+        return yield* Effect.fail(new TestError({ message: "Test error" }));
+      }
+      return "Hello, world!";
+    }),
+});
+
 export default function HomeRoute() {
-  const { data, status, error } = useQuery(
-    eq.queryOptions({
-      queryKey: ["namespace", "action"],
-      queryFn: () =>
-        Effect.gen(function* () {
-          if (Math.random() < 0.5) {
-            return yield* Effect.fail(new QueryError({ hello: "world" }));
-          }
-          if (Math.random() < 0.5) {
-            return yield* Effect.fail(new TestError({ message: "Test error" }));
-          }
-          return "Hello, world!";
-        }),
-    })
-  );
+  const { data, status, error } = useQuery(queryOptions);
+
+  // Usage with suspense
+  // const suspenseQueryOptions = useSuspenseQuery(queryOptions);
 
   if (status === "error" && error) {
     return error.match({
