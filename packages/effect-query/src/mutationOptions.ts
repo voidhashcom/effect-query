@@ -22,8 +22,7 @@ export type EffectQueryMutationOptionsInput<
   TFnResult,
   TFnErrorResult extends { _tag: string },
   TFnRequirements,
-  // biome-ignore lint/suspicious/noExplicitAny: Can be anything
-  TVariables = any,
+  TVariables,
 > = Omit<
   UseMutationOptions<TFnResult, TFnErrorResult, TVariables>,
   "mutationFn"

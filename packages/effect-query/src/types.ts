@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: required for React Query compatibility */
 import type { InfiniteData } from "@tanstack/react-query";
 import type { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type {
@@ -65,7 +64,7 @@ export type EffectQueryApi = {
     TFnResult,
     TFnErrorResult extends { _tag: string },
     TFnRequirements,
-    TVariables = any,
+    TVariables,
   >(
     inputOptions: EffectQueryMutationOptionsInput<
       TFnResult,

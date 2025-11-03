@@ -203,8 +203,7 @@ export type EffectInfiniteQueryOptionsInput<
   TFnErrorResult extends { _tag: string },
   TFnRequirements,
   TData = InfiniteData<TFnResult>,
-  // biome-ignore lint/suspicious/noExplicitAny: Can be anything
-  TPageParam = any,
+  TPageParam = unknown,
 > =
   | EffectInfiniteQueryUndefinedInitialDataOptions<
       TFnResult,
