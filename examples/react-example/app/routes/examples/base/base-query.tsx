@@ -9,7 +9,7 @@ class TestError extends Data.TaggedError("TestError")<{ message: string }> {}
 export const eq = createEffectQuery(Layer.empty);
 
 const queryOptions = eq.queryOptions({
-  queryKey: ["namespace", "action"],
+  queryKey: ["namespace"],
   queryFn: () =>
     Effect.gen(function* () {
       if (Math.random() < 0.5) {

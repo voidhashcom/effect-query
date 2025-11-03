@@ -3,17 +3,18 @@ import { createEffectInfiniteQueryOptions } from "./infiniteQueryOptions";
 import { createEffectMutationOptions } from "./mutationOptions";
 import { createEffectQueryQueryOptions } from "./queryOptions";
 import { EffectQueryRunner } from "./runner";
+import type { EffectQueryApi } from "./types";
 
 export function createEffectQuery<Input>(
   layer: Layer.Layer<Input, never, never>
-) {
+): EffectQueryApi {
   const runtime = ManagedRuntime.make(layer);
   return createEffectQueryFromManagedRuntime(runtime);
 }
 
 export function createEffectQueryFromManagedRuntime<Input>(
   runtime: ManagedRuntime.ManagedRuntime<Input, never>
-) {
+): EffectQueryApi {
   const runner = new EffectQueryRunner(runtime);
 
   return {
@@ -22,3 +23,5 @@ export function createEffectQueryFromManagedRuntime<Input>(
     mutationOptions: createEffectMutationOptions(runner),
   };
 }
+
+export type { EffectQueryApi } from "./types";
