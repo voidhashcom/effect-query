@@ -7,12 +7,7 @@ import { Cause, type Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
-
-type InferMutationErrorResult<TFnErrorResult extends { _tag: string }> = [
-  TFnErrorResult,
-] extends [never]
-  ? EffectQueryDefect<unknown>
-  : EffectQueryFailure<TFnErrorResult> | EffectQueryDefect<unknown>;
+import type { InferQueryErrorResult } from "./types";
 
 type EffectfulMutationFunction<
   TFnResult,
@@ -27,7 +22,8 @@ export type EffectQueryMutationOptionsInput<
   TFnResult,
   TFnErrorResult extends { _tag: string },
   TFnRequirements,
-  TVariables,
+  // biome-ignore lint/suspicious/noExplicitAny: Can be anything
+  TVariables = any,
 > = Omit<
   UseMutationOptions<TFnResult, TFnErrorResult, TVariables>,
   "mutationFn"
@@ -47,7 +43,7 @@ export type EffectQueryMutationOptionsResult<
 > = Omit<
   EffectQueryMutationOptionsInput<
     TFnResult,
-    InferMutationErrorResult<TFnErrorResult>,
+    InferQueryErrorResult<TFnErrorResult>,
     never,
     TVariables
   >,
@@ -56,26 +52,48 @@ export type EffectQueryMutationOptionsResult<
   mutationFn: MutationFunction<TFnResult, TVariables>;
 };
 
+export type EffectMutationOptionsReturn<TInput> =
+  TInput extends EffectQueryMutationOptionsInput<
+    infer R,
+    infer E extends { _tag: string },
+    infer _Req,
+    infer V
+  >
+    ? EffectQueryMutationOptionsResult<R, E, V>
+    : never;
+
 export function createEffectMutationOptions<Input>(
   runner: EffectQueryRunner<ManagedRuntime<Input, never>>
 ) {
   function effectMutationOptions<
     TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
+    TError extends { _tag: string },
+    TRequirements,
     TVariables,
   >(
     inputOptions: EffectQueryMutationOptionsInput<
       TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
+      TError,
+      TRequirements,
       TVariables
     >
-  ): EffectQueryMutationOptionsResult<TFnResult, TFnErrorResult, TVariables> {
+  ): EffectMutationOptionsReturn<
+    EffectQueryMutationOptionsInput<
+      TFnResult,
+      TError,
+      TRequirements,
+      TVariables
+    >
+  > {
     const spanName = inputOptions.mutationKey?.[0] ?? "effect-query-mutation";
-    const mutationFn: MutationFunction<TFnResult, TVariables> = async (
-      variables: TVariables
-    ) => {
+    const mutationFn: EffectMutationOptionsReturn<
+      EffectQueryMutationOptionsInput<
+        TFnResult,
+        TError,
+        TRequirements,
+        TVariables
+      >
+    >["mutationFn"] = async (variables) => {
       const effect = inputOptions.mutationFn(variables);
       const result = await runner.run(
         effect,
@@ -93,14 +111,16 @@ export function createEffectMutationOptions<Input>(
       });
     };
 
-    // The as UseMutationOptions is a workaround to set the correct error type. React Query has no way to infer the error type from the Effect.
     return mutationOptions({
       ...inputOptions,
       mutationFn,
-    }) as unknown as EffectQueryMutationOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TVariables
+    }) as unknown as EffectMutationOptionsReturn<
+      EffectQueryMutationOptionsInput<
+        TFnResult,
+        TError,
+        TRequirements,
+        TVariables
+      >
     >;
   }
 

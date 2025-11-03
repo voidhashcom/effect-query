@@ -1,5 +1,4 @@
 import {
-  // type DataTag,
   type DefinedInitialDataOptions,
   type QueryFunction,
   type QueryFunctionContext,
@@ -14,18 +13,7 @@ import { Cause, type Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
-
-// type EffectQueryQueryKey<TQueryKey, TQueryFnData, TError> = DataTag<
-//   TQueryKey,
-//   TQueryFnData,
-//   TError
-// >;
-
-type InferQueryErrorResult<TFnErrorResult extends { _tag: string }> = [
-  TFnErrorResult,
-] extends [never]
-  ? EffectQueryDefect<unknown>
-  : EffectQueryFailure<TFnErrorResult> | EffectQueryDefect<unknown>;
+import type { InferQueryErrorResult } from "./types";
 
 export type EffectQueryQueryFn<
   TFnResult,
@@ -93,7 +81,7 @@ export type EffectQueryDefinedInitialDataOptions<
   TRequirements,
   TData = TQueryFnData,
 > = Omit<DefinedInitialDataOptions<TQueryFnData, TError, TData>, "queryFn"> & {
-  queryFn: EffectQueryQueryFn<TQueryFnData, TError, TRequirements> | SkipToken;
+  queryFn: EffectQueryQueryFn<TQueryFnData, TError, TRequirements>;
 };
 
 export type EffectQueryDefinedInitialDataOptionsResult<
@@ -135,25 +123,53 @@ export type EffectQueryOptionsInput<
       TFnResult
     >;
 
-export type EffectQueryOptionsResult<
-  TFnResult,
-  TFnErrorResult extends { _tag: string },
-> =
-  | EffectQueryUndefinedInitialDataOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TFnResult
-    >
-  | EffectQueryDefinedInitialDataOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TFnResult
-    >
-  | EffectQueryUnusedSkipTokenOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TFnResult
-    >;
+export type ExtractQueryResult<TInput> =
+  TInput extends EffectQueryDefinedInitialDataOptions<
+    infer _R,
+    infer _E extends { _tag: string },
+    infer _Req,
+    infer D
+  >
+    ? D
+    : TInput extends EffectQueryUnusedSkipTokenOptions<
+          infer _R,
+          infer _E extends { _tag: string },
+          infer _Req,
+          infer D
+        >
+      ? D
+      : TInput extends EffectQueryUndefinedInitialDataOptions<
+            infer _R,
+            infer _E extends { _tag: string },
+            infer _Req,
+            infer D
+          >
+        ? D
+        : never;
+
+export type EffectQueryOptionsReturn<TInput> =
+  TInput extends EffectQueryDefinedInitialDataOptions<
+    infer R,
+    infer E extends { _tag: string },
+    infer _Req,
+    infer D
+  >
+    ? EffectQueryDefinedInitialDataOptionsResult<R, E, D>
+    : TInput extends EffectQueryUnusedSkipTokenOptions<
+          infer R,
+          infer E extends { _tag: string },
+          infer _Req,
+          infer D
+        >
+      ? EffectQueryUnusedSkipTokenOptionsResult<R, E, D>
+      : TInput extends EffectQueryUndefinedInitialDataOptions<
+            infer R,
+            infer E extends { _tag: string },
+            infer _Req,
+            infer D
+          >
+        ? EffectQueryUndefinedInitialDataOptionsResult<R, E, D>
+        : never;
 
 export function createEffectQueryQueryOptions<Input>(
   runner: EffectQueryRunner<ManagedRuntime<Input, never>>
@@ -162,67 +178,21 @@ export function createEffectQueryQueryOptions<Input>(
     TFnResult,
     TFnErrorResult extends { _tag: string },
     TFnRequirements,
-  >(
-    inputOptions: EffectQueryDefinedInitialDataOptions<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      TFnResult
-    >
-  ): EffectQueryDefinedInitialDataOptionsResult<
-    TFnResult,
-    TFnErrorResult,
-    TFnResult
-  >;
-  function effectQueryQueryOptions<
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
-  >(
-    inputOptions: EffectQueryUnusedSkipTokenOptions<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      TFnResult
-    >
-  ): EffectQueryUnusedSkipTokenOptionsResult<
-    TFnResult,
-    TFnErrorResult,
-    TFnResult
-  >;
-  function effectQueryQueryOptions<
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
-  >(
-    inputOptions: EffectQueryUndefinedInitialDataOptions<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      TFnResult
-    >
-  ): EffectQueryUndefinedInitialDataOptionsResult<
-    TFnResult,
-    TFnErrorResult,
-    TFnResult
-  >;
-  function effectQueryQueryOptions<
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
-  >(
-    inputOptions: EffectQueryOptionsInput<
+    TInput extends EffectQueryOptionsInput<
       TFnResult,
       TFnErrorResult,
       TFnRequirements
-    >
-  ): EffectQueryOptionsResult<TFnResult, TFnErrorResult> {
+    >,
+  >(
+    inputOptions: TInput
+  ): EffectQueryOptionsReturn<
+    EffectQueryOptionsInput<TFnResult, TFnErrorResult, TFnRequirements>
+  > {
     const [spanName] = inputOptions.queryKey;
 
-    const queryFn: EffectQueryOptionsResult<
-      TFnResult,
-      InferQueryErrorResult<TFnErrorResult>
-    >["queryFn"] = async (queryFnContext) => {
+    const queryFn: EffectQueryOptionsReturn<TInput>["queryFn"] = async (
+      queryFnContext
+    ) => {
       // This is there as a workaround to avoid type errors.
       if (inputOptions.queryFn === skipToken) {
         throw new Error("Query function is skipped");
@@ -245,14 +215,14 @@ export function createEffectQueryQueryOptions<Input>(
           }
           throw new EffectQueryDefect(Cause.pretty(cause), cause);
         },
-      });
+      }) as ExtractQueryResult<TInput>;
     };
 
     // The as UseQueryOptions is a workaround to set the correct error type. React Query has no way to infer the error type from the Effect.
     return queryOptions({
       ...inputOptions,
       queryFn,
-    }) as EffectQueryOptionsResult<TFnResult, TFnErrorResult>;
+    }) as unknown as EffectQueryOptionsReturn<TInput>;
   }
 
   return effectQueryQueryOptions;

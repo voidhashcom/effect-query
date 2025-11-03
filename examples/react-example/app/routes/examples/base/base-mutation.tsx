@@ -22,9 +22,10 @@ class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
 
 // You can move this outside of the component and even share it with other components
 const updateUserOptions = eq.mutationOptions({
-  mutationFn: () =>
+  mutationFn: (variables: { id: string }) =>
     Effect.gen(function* () {
       yield* Effect.sleep(Duration.millis(1000));
+      yield* Console.log(`Updating user ${variables.id}...`);
       if (Math.random() < 0.5) {
         return yield* Effect.fail(
           new UserUpdateError({ message: "Failed to update user" })
@@ -43,6 +44,7 @@ export default function UpdateUserPage({ id }: { id: string }) {
         UserUpdateError: (userUpdateError) => {
           alert(`${userUpdateError.message}`);
         },
+
         OrElse: (cause) => {
           alert(`Error updating user: ${Cause.pretty(cause)}`);
         },
@@ -52,7 +54,14 @@ export default function UpdateUserPage({ id }: { id: string }) {
     },
   });
   return (
-    <button onClick={() => mutate({ id })} type="button">
+    <button
+      onClick={() =>
+        mutate({
+          id,
+        })
+      }
+      type="button"
+    >
       Update User
     </button>
   );

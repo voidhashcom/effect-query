@@ -15,12 +15,6 @@ import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
 
-type InferInfiniteQueryErrorResult<TFnErrorResult extends { _tag: string }> = [
-  TFnErrorResult,
-] extends [never]
-  ? EffectQueryDefect<unknown>
-  : EffectQueryFailure<TFnErrorResult> | EffectQueryDefect<unknown>;
-
 export type EffectInfiniteQueryQueryFn<
   TFnResult,
   TFnErrorResult,
@@ -30,7 +24,12 @@ export type EffectInfiniteQueryQueryFn<
   context: QueryFunctionContext<QueryKey, TPageParam>
 ) => Effect.Effect<TFnResult, TFnErrorResult, TFnRequirements>;
 
-// Helper type to transform base options to Effect input options
+export type InferInfiniteQueryErrorResult<
+  TFnErrorResult extends { _tag: string },
+> = [TFnErrorResult] extends [never]
+  ? EffectQueryDefect<unknown>
+  : EffectQueryFailure<TFnErrorResult> | EffectQueryDefect<unknown>;
+
 type ToEffectInputOptions<
   TBaseOptions,
   TQueryFnData,
@@ -48,13 +47,11 @@ type ToEffectInputOptions<
     | SkipToken;
 };
 
-// Helper type to transform input options to result options
 type ToEffectResultOptions<
   TInputOptions,
   TQueryFnData,
   TError extends { _tag: string },
   TData,
-  TQueryKey extends QueryKey,
   TPageParam,
   TExcludeSkipToken extends boolean = false,
 > = Omit<TInputOptions, "queryFn"> & {
@@ -64,7 +61,7 @@ type ToEffectResultOptions<
           TQueryFnData,
           TError,
           TData,
-          TQueryKey,
+          QueryKey,
           TPageParam
         >["queryFn"],
         SkipToken | undefined
@@ -73,25 +70,23 @@ type ToEffectResultOptions<
         TQueryFnData,
         TError,
         TData,
-        TQueryKey,
+        QueryKey,
         TPageParam
       >["queryFn"];
 };
 
-// Input option types
 export type EffectInfiniteQueryUndefinedInitialDataOptions<
   TQueryFnData,
   TError extends { _tag: string },
   TRequirements,
-  TData,
-  TQueryKey extends QueryKey,
-  TPageParam,
+  TData = InfiniteData<TQueryFnData>,
+  TPageParam = unknown,
 > = ToEffectInputOptions<
   UndefinedInitialDataInfiniteOptions<
     TQueryFnData,
     TError,
     TData,
-    TQueryKey,
+    QueryKey,
     TPageParam
   >,
   TQueryFnData,
@@ -104,15 +99,14 @@ export type EffectInfiniteQueryDefinedInitialDataOptions<
   TQueryFnData,
   TError extends { _tag: string },
   TRequirements,
-  TData,
-  TQueryKey extends QueryKey,
-  TPageParam,
+  TData = InfiniteData<TQueryFnData>,
+  TPageParam = unknown,
 > = ToEffectInputOptions<
   DefinedInitialDataInfiniteOptions<
     TQueryFnData,
     TError,
     TData,
-    TQueryKey,
+    QueryKey,
     TPageParam
   >,
   TQueryFnData,
@@ -125,15 +119,14 @@ export type EffectInfiniteQueryUnusedSkipTokenOptions<
   TQueryFnData,
   TError extends { _tag: string },
   TRequirements,
-  TData,
-  TQueryKey extends QueryKey,
-  TPageParam,
+  TData = InfiniteData<TQueryFnData>,
+  TPageParam = unknown,
 > = ToEffectInputOptions<
   UnusedSkipTokenInfiniteOptions<
     TQueryFnData,
     TError,
     TData,
-    TQueryKey,
+    QueryKey,
     TPageParam
   >,
   TQueryFnData,
@@ -142,13 +135,11 @@ export type EffectInfiniteQueryUnusedSkipTokenOptions<
   TPageParam
 >;
 
-// Result option types - transform error type and queryFn
 export type EffectInfiniteQueryUndefinedInitialDataOptionsResult<
   TQueryFnData,
   TError extends { _tag: string },
   TRequirements,
   TData,
-  TQueryKey extends QueryKey,
   TPageParam,
 > = ToEffectResultOptions<
   EffectInfiniteQueryUndefinedInitialDataOptions<
@@ -156,15 +147,13 @@ export type EffectInfiniteQueryUndefinedInitialDataOptionsResult<
     InferInfiniteQueryErrorResult<TError>,
     TRequirements,
     TData,
-    TQueryKey,
     TPageParam
   >,
   TQueryFnData,
   InferInfiniteQueryErrorResult<TError>,
   TData,
-  TQueryKey,
   TPageParam,
-  false
+  true
 >;
 
 export type EffectInfiniteQueryDefinedInitialDataOptionsResult<
@@ -172,7 +161,6 @@ export type EffectInfiniteQueryDefinedInitialDataOptionsResult<
   TError extends { _tag: string },
   TRequirements,
   TData,
-  TQueryKey extends QueryKey,
   TPageParam,
 > = ToEffectResultOptions<
   EffectInfiniteQueryDefinedInitialDataOptions<
@@ -180,15 +168,13 @@ export type EffectInfiniteQueryDefinedInitialDataOptionsResult<
     InferInfiniteQueryErrorResult<TError>,
     TRequirements,
     TData,
-    TQueryKey,
     TPageParam
   >,
   TQueryFnData,
   InferInfiniteQueryErrorResult<TError>,
   TData,
-  TQueryKey,
   TPageParam,
-  false
+  true
 >;
 
 export type EffectInfiniteQueryUnusedSkipTokenOptionsResult<
@@ -196,7 +182,6 @@ export type EffectInfiniteQueryUnusedSkipTokenOptionsResult<
   TError extends { _tag: string },
   TRequirements,
   TData,
-  TQueryKey extends QueryKey,
   TPageParam,
 > = ToEffectResultOptions<
   EffectInfiniteQueryUnusedSkipTokenOptions<
@@ -204,32 +189,28 @@ export type EffectInfiniteQueryUnusedSkipTokenOptionsResult<
     InferInfiniteQueryErrorResult<TError>,
     TRequirements,
     TData,
-    TQueryKey,
     TPageParam
   >,
   TQueryFnData,
   InferInfiniteQueryErrorResult<TError>,
   TData,
-  TQueryKey,
   TPageParam,
   true
 >;
 
-// Union types for convenience
 export type EffectInfiniteQueryOptionsInput<
   TFnResult,
   TFnErrorResult extends { _tag: string },
   TFnRequirements,
-  TData,
-  TQueryKey extends QueryKey,
-  TPageParam,
+  TData = InfiniteData<TFnResult>,
+  // biome-ignore lint/suspicious/noExplicitAny: Can be anything
+  TPageParam = any,
 > =
   | EffectInfiniteQueryUndefinedInitialDataOptions<
       TFnResult,
       TFnErrorResult,
       TFnRequirements,
       TData,
-      TQueryKey,
       TPageParam
     >
   | EffectInfiniteQueryDefinedInitialDataOptions<
@@ -237,7 +218,6 @@ export type EffectInfiniteQueryOptionsInput<
       TFnErrorResult,
       TFnRequirements,
       TData,
-      TQueryKey,
       TPageParam
     >
   | EffectInfiniteQueryUnusedSkipTokenOptions<
@@ -245,150 +225,73 @@ export type EffectInfiniteQueryOptionsInput<
       TFnErrorResult,
       TFnRequirements,
       TData,
-      TQueryKey,
       TPageParam
     >;
 
-export type EffectInfiniteQueryOptionsResult<
-  TFnResult,
-  TFnErrorResult extends { _tag: string },
-  TRequirements,
-  TData,
-  TQueryKey extends QueryKey,
-  TPageParam,
-> =
-  | EffectInfiniteQueryUndefinedInitialDataOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TRequirements,
-      TData,
-      TQueryKey,
-      TPageParam
-    >
-  | EffectInfiniteQueryDefinedInitialDataOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TRequirements,
-      TData,
-      TQueryKey,
-      TPageParam
-    >
-  | EffectInfiniteQueryUnusedSkipTokenOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TRequirements,
-      TData,
-      TQueryKey,
-      TPageParam
-    >;
+export type EffectInfiniteQueryOptionsReturn<TInput> =
+  TInput extends EffectInfiniteQueryDefinedInitialDataOptions<
+    infer R,
+    infer E extends { _tag: string },
+    infer Req,
+    infer D,
+    infer PP
+  >
+    ? EffectInfiniteQueryDefinedInitialDataOptionsResult<R, E, Req, D, PP>
+    : TInput extends EffectInfiniteQueryUnusedSkipTokenOptions<
+          infer R,
+          infer E extends { _tag: string },
+          infer Req,
+          infer D,
+          infer PP
+        >
+      ? EffectInfiniteQueryUnusedSkipTokenOptionsResult<R, E, Req, D, PP>
+      : TInput extends EffectInfiniteQueryUndefinedInitialDataOptions<
+            infer R,
+            infer E extends { _tag: string },
+            infer Req,
+            infer D,
+            infer PP
+          >
+        ? EffectInfiniteQueryUndefinedInitialDataOptionsResult<R, E, Req, D, PP>
+        : never;
 
 export function createEffectInfiniteQueryOptions<Input>(
   runner: EffectQueryRunner<ManagedRuntime<Input, never>>
 ) {
   function effectInfiniteQueryOptions<
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
-    TData = InfiniteData<TFnResult>,
-    TQueryKey extends QueryKey = QueryKey,
-    TPageParam = unknown,
-  >(
-    inputOptions: EffectInfiniteQueryDefinedInitialDataOptions<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      TData,
-      TQueryKey,
-      TPageParam
-    >
-  ): EffectInfiniteQueryDefinedInitialDataOptionsResult<
-    TFnResult,
-    TFnErrorResult,
-    TFnRequirements,
-    TData,
-    TQueryKey,
-    TPageParam
-  >;
-  function effectInfiniteQueryOptions<
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
-    TQueryKey extends QueryKey = QueryKey,
-    TPageParam = unknown,
-  >(
-    inputOptions: EffectInfiniteQueryUnusedSkipTokenOptions<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      InfiniteData<TFnResult>,
-      TQueryKey,
-      TPageParam
-    >
-  ): EffectInfiniteQueryUnusedSkipTokenOptionsResult<
-    TFnResult,
-    TFnErrorResult,
-    TFnRequirements,
-    InfiniteData<TFnResult>,
-    TQueryKey,
-    TPageParam
-  >;
-  function effectInfiniteQueryOptions<
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
-    TQueryKey extends QueryKey = QueryKey,
-    TPageParam = unknown,
-  >(
-    inputOptions: EffectInfiniteQueryUndefinedInitialDataOptions<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      InfiniteData<TFnResult>,
-      TQueryKey,
-      TPageParam
-    >
-  ): EffectInfiniteQueryUndefinedInitialDataOptionsResult<
-    TFnResult,
-    TFnErrorResult,
-    TFnRequirements,
-    InfiniteData<TFnResult>,
-    TQueryKey,
-    TPageParam
-  >;
-  function effectInfiniteQueryOptions<
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements,
-    TQueryKey extends QueryKey = QueryKey,
+    TQueryFnData,
+    TError extends { _tag: string },
+    TRequirements,
+    TData = InfiniteData<TQueryFnData>,
     TPageParam = unknown,
   >(
     inputOptions: EffectInfiniteQueryOptionsInput<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      InfiniteData<TFnResult>,
-      TQueryKey,
+      TQueryFnData,
+      TError,
+      TRequirements,
+      TData,
       TPageParam
     >
-  ): EffectInfiniteQueryOptionsResult<
-    TFnResult,
-    TFnErrorResult,
-    TFnRequirements,
-    InfiniteData<TFnResult>,
-    TQueryKey,
-    TPageParam
+  ): EffectInfiniteQueryOptionsReturn<
+    EffectInfiniteQueryOptionsInput<
+      TQueryFnData,
+      TError,
+      TRequirements,
+      TData,
+      TPageParam
+    >
   > {
     const [spanName] = inputOptions.queryKey;
 
-    const queryFn: EffectInfiniteQueryOptionsResult<
-      TFnResult,
-      InferInfiniteQueryErrorResult<TFnErrorResult>,
-      TFnRequirements,
-      InfiniteData<TFnResult>,
-      TQueryKey,
-      TPageParam
+    const queryFn: EffectInfiniteQueryOptionsReturn<
+      EffectInfiniteQueryOptionsInput<
+        TQueryFnData,
+        TError,
+        TRequirements,
+        TData,
+        TPageParam
+      >
     >["queryFn"] = async (queryFnContext) => {
-      // This is there as a workaround to avoid type errors.
       if (inputOptions.queryFn === skipToken) {
         throw new Error("Query function is skipped");
       }
@@ -413,17 +316,17 @@ export function createEffectInfiniteQueryOptions<Input>(
       });
     };
 
-    // The as UseInfiniteQueryOptions is a workaround to set the correct error type. React Query has no way to infer the error type from the Effect.
     return infiniteQueryOptions({
       ...inputOptions,
       queryFn,
-    }) as unknown as EffectInfiniteQueryOptionsResult<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      InfiniteData<TFnResult>,
-      TQueryKey,
-      TPageParam
+    }) as unknown as EffectInfiniteQueryOptionsReturn<
+      EffectInfiniteQueryOptionsInput<
+        TQueryFnData,
+        TError,
+        TRequirements,
+        TData,
+        TPageParam
+      >
     >;
   }
 
