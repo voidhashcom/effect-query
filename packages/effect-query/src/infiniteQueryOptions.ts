@@ -1,19 +1,18 @@
 import {
   type DefinedInitialDataInfiniteOptions,
-  type InfiniteData,
   infiniteQueryOptions,
+  type QueryFunction,
   type QueryFunctionContext,
   type QueryKey,
-  type SkipToken,
   skipToken,
   type UndefinedInitialDataInfiniteOptions,
   type UnusedSkipTokenInfiniteOptions,
-  type UseInfiniteQueryOptions,
 } from "@tanstack/react-query";
-import { Cause, type Effect, Exit } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
+import type { InfiniteData, SkipTokenLike } from "./types";
 
 export type EffectInfiniteQueryQueryFn<
   TFnResult,
@@ -30,7 +29,7 @@ export type InferInfiniteQueryErrorResult<
   ? EffectQueryDefect<unknown>
   : EffectQueryFailure<TFnErrorResult> | EffectQueryDefect<unknown>;
 
-type ToEffectInputOptions<
+export type ToEffectInputOptions<
   TBaseOptions,
   TQueryFnData,
   TError extends { _tag: string },
@@ -44,35 +43,7 @@ type ToEffectInputOptions<
         TRequirements,
         TPageParam
       >
-    | SkipToken;
-};
-
-type ToEffectResultOptions<
-  TInputOptions,
-  TQueryFnData,
-  TError extends { _tag: string },
-  TData,
-  TPageParam,
-  TExcludeSkipToken extends boolean = false,
-> = Omit<TInputOptions, "queryFn"> & {
-  queryFn: TExcludeSkipToken extends true
-    ? Exclude<
-        UseInfiniteQueryOptions<
-          TQueryFnData,
-          TError,
-          TData,
-          QueryKey,
-          TPageParam
-        >["queryFn"],
-        SkipToken | undefined
-      >
-    : UseInfiniteQueryOptions<
-        TQueryFnData,
-        TError,
-        TData,
-        QueryKey,
-        TPageParam
-      >["queryFn"];
+    | SkipTokenLike;
 };
 
 export type EffectInfiniteQueryUndefinedInitialDataOptions<
@@ -141,7 +112,7 @@ export type EffectInfiniteQueryUndefinedInitialDataOptionsResult<
   TRequirements,
   TData,
   TPageParam,
-> = ToEffectResultOptions<
+> = Omit<
   EffectInfiniteQueryUndefinedInitialDataOptions<
     TQueryFnData,
     InferInfiniteQueryErrorResult<TError>,
@@ -149,12 +120,10 @@ export type EffectInfiniteQueryUndefinedInitialDataOptionsResult<
     TData,
     TPageParam
   >,
-  TQueryFnData,
-  InferInfiniteQueryErrorResult<TError>,
-  TData,
-  TPageParam,
-  true
->;
+  "queryFn"
+> & {
+  queryFn: QueryFunction<TQueryFnData, QueryKey, TPageParam>;
+};
 
 export type EffectInfiniteQueryDefinedInitialDataOptionsResult<
   TQueryFnData,
@@ -162,7 +131,7 @@ export type EffectInfiniteQueryDefinedInitialDataOptionsResult<
   TRequirements,
   TData,
   TPageParam,
-> = ToEffectResultOptions<
+> = Omit<
   EffectInfiniteQueryDefinedInitialDataOptions<
     TQueryFnData,
     InferInfiniteQueryErrorResult<TError>,
@@ -170,12 +139,10 @@ export type EffectInfiniteQueryDefinedInitialDataOptionsResult<
     TData,
     TPageParam
   >,
-  TQueryFnData,
-  InferInfiniteQueryErrorResult<TError>,
-  TData,
-  TPageParam,
-  true
->;
+  "queryFn"
+> & {
+  queryFn: QueryFunction<TQueryFnData, QueryKey, TPageParam>;
+};
 
 export type EffectInfiniteQueryUnusedSkipTokenOptionsResult<
   TQueryFnData,
@@ -183,7 +150,7 @@ export type EffectInfiniteQueryUnusedSkipTokenOptionsResult<
   TRequirements,
   TData,
   TPageParam,
-> = ToEffectResultOptions<
+> = Omit<
   EffectInfiniteQueryUnusedSkipTokenOptions<
     TQueryFnData,
     InferInfiniteQueryErrorResult<TError>,
@@ -191,12 +158,10 @@ export type EffectInfiniteQueryUnusedSkipTokenOptionsResult<
     TData,
     TPageParam
   >,
-  TQueryFnData,
-  InferInfiniteQueryErrorResult<TError>,
-  TData,
-  TPageParam,
-  true
->;
+  "queryFn"
+> & {
+  queryFn: QueryFunction<TQueryFnData, QueryKey, TPageParam>;
+};
 
 export type EffectInfiniteQueryOptionsInput<
   TFnResult,
@@ -291,11 +256,22 @@ export function createEffectInfiniteQueryOptions<Input>(
         TPageParam
       >
     >["queryFn"] = async (queryFnContext) => {
-      if (inputOptions.queryFn === skipToken) {
-        throw new Error("Query function is skipped");
+      // Assert
+      if (
+        typeof inputOptions.queryFn === "symbol" &&
+        inputOptions.queryFn !== skipToken
+      ) {
+        // biome-ignore lint/suspicious/noConsole: console.warn is used to warn the user about the mistake
+        console.warn(
+          "You passed a symbol as query function, but it is not the skipToken symbol. This is probably a mistake."
+        );
       }
 
-      const effect = inputOptions.queryFn(queryFnContext);
+      const effect =
+        typeof inputOptions.queryFn === "function"
+          ? inputOptions.queryFn(queryFnContext)
+          : Effect.succeed(undefined);
+
       const result = await runner.run(
         effect,
         typeof spanName === "string" ? spanName : "effect-query",
@@ -304,7 +280,7 @@ export function createEffectInfiniteQueryOptions<Input>(
         }
       );
       return Exit.match(result, {
-        onSuccess: (value) => value,
+        onSuccess: (value) => value as TQueryFnData,
         onFailure: (cause) => {
           if (cause._tag === "Fail") {
             const failure = cause.error;
@@ -315,8 +291,13 @@ export function createEffectInfiniteQueryOptions<Input>(
       });
     };
 
+    const isEnabled = !(
+      inputOptions.enabled === false || inputOptions.queryFn === skipToken
+    );
+
     return infiniteQueryOptions({
       ...inputOptions,
+      enabled: isEnabled,
       queryFn,
     }) as unknown as EffectInfiniteQueryOptionsReturn<
       EffectInfiniteQueryOptionsInput<

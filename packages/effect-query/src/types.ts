@@ -1,4 +1,3 @@
-import type { InfiniteData } from "@tanstack/react-query";
 import type { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type {
   EffectInfiniteQueryOptionsInput,
@@ -16,6 +15,13 @@ import type {
 // ============================================================================
 // SHARED HELPERS
 // ============================================================================
+
+export type SkipTokenLike = symbol;
+
+export type InfiniteData<TData, TPageParam = unknown> = {
+  pages: TData[];
+  pageParams: TPageParam[];
+};
 
 export type InferQueryErrorResult<TFnErrorResult extends { _tag: string }> = [
   TFnErrorResult,
@@ -81,3 +87,7 @@ export type EffectQueryApi = {
     >
   >;
 };
+
+export type * from "./infiniteQueryOptions";
+export type * from "./mutationOptions";
+export type * from "./queryOptions";

@@ -4,16 +4,15 @@ import {
   type QueryFunctionContext,
   type QueryKey,
   queryOptions,
-  type SkipToken,
   skipToken,
   type UndefinedInitialDataOptions,
   type UnusedSkipTokenOptions,
 } from "@tanstack/react-query";
-import { Cause, type Effect, Exit } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
-import type { InferQueryErrorResult } from "./types";
+import type { InferQueryErrorResult, SkipTokenLike } from "./types";
 
 export type EffectQueryQueryFn<
   TFnResult,
@@ -33,7 +32,9 @@ export type EffectQueryUndefinedInitialDataOptions<
   UndefinedInitialDataOptions<TQueryFnData, TError, TData>,
   "queryFn"
 > & {
-  queryFn: EffectQueryQueryFn<TQueryFnData, TError, TRequirements> | SkipToken;
+  queryFn:
+    | EffectQueryQueryFn<TQueryFnData, TError, TRequirements>
+    | SkipTokenLike;
 };
 
 export type EffectQueryUndefinedInitialDataOptionsResult<
@@ -57,7 +58,9 @@ export type EffectQueryUnusedSkipTokenOptions<
   TRequirements,
   TData = TQueryFnData,
 > = Omit<UnusedSkipTokenOptions<TQueryFnData, TError, TData>, "queryFn"> & {
-  queryFn: EffectQueryQueryFn<TQueryFnData, TError, TRequirements> | SkipToken;
+  queryFn:
+    | EffectQueryQueryFn<TQueryFnData, TError, TRequirements>
+    | SkipTokenLike;
 };
 
 export type EffectQueryUnusedSkipTokenOptionsResult<
@@ -81,7 +84,7 @@ export type EffectQueryDefinedInitialDataOptions<
   TRequirements,
   TData = TQueryFnData,
 > = Omit<DefinedInitialDataOptions<TQueryFnData, TError, TData>, "queryFn"> & {
-  queryFn: EffectQueryQueryFn<TQueryFnData, TError, TRequirements>;
+  queryFn: EffectQueryQueryFn<TQueryFnData, TError, TRequirements> | symbol;
 };
 
 export type EffectQueryDefinedInitialDataOptionsResult<
@@ -193,12 +196,22 @@ export function createEffectQueryQueryOptions<Input>(
     const queryFn: EffectQueryOptionsReturn<TInput>["queryFn"] = async (
       queryFnContext
     ) => {
-      // This is there as a workaround to avoid type errors.
-      if (inputOptions.queryFn === skipToken) {
-        throw new Error("Query function is skipped");
+      // Assert
+      if (
+        typeof inputOptions.queryFn === "symbol" &&
+        inputOptions.queryFn !== skipToken
+      ) {
+        // biome-ignore lint/suspicious/noConsole: console.warn is used to warn the user about the mistake
+        console.warn(
+          "You passed a symbol as query function, but it is not the skipToken symbol. This is probably a mistake."
+        );
       }
 
-      const effect = inputOptions.queryFn(queryFnContext);
+      const effect =
+        typeof inputOptions.queryFn === "function"
+          ? inputOptions.queryFn(queryFnContext)
+          : Effect.succeed(undefined);
+
       const result = await runner.run(
         effect,
         typeof spanName === "string" ? spanName : "effect-query",
@@ -218,9 +231,15 @@ export function createEffectQueryQueryOptions<Input>(
       }) as ExtractQueryResult<TInput>;
     };
 
+    // If the query is disabled or the queryFn is skipToken, the query is not enabled.
+    const isEnabled = !(
+      inputOptions.enabled === false || inputOptions.queryFn === skipToken
+    );
+
     // The as UseQueryOptions is a workaround to set the correct error type. React Query has no way to infer the error type from the Effect.
     return queryOptions({
       ...inputOptions,
+      enabled: isEnabled,
       queryFn,
     }) as unknown as EffectQueryOptionsReturn<TInput>;
   }

@@ -24,4 +24,4 @@ export function createEffectQueryFromManagedRuntime<Input>(
   };
 }
 
-export type { EffectQueryApi } from "./types";
+export type * from "./types";

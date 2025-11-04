@@ -8,7 +8,7 @@ import { Effect, Layer } from "effect";
 import { describe, expect, test } from "vitest";
 import { renderHook } from "vitest-browser-react";
 import { createEffectQuery } from "../src";
-import { HooksWrapper } from "./_helpers";
+import { afterQueryFinish, HooksWrapper } from "./_helpers";
 
 describe("infiniteQueryOptions", () => {
   const testContext = () => {
@@ -76,7 +76,41 @@ describe("infiniteQueryOptions", () => {
       }
     );
 
-    expect(defaultResult.current.data).toEqual(effectQueryResult.current.data);
+    await afterQueryFinish(
+      () => {
+        expect(defaultResult.current.data).toEqual(
+          effectQueryResult.current.data
+        );
+      },
+      defaultResult,
+      effectQueryResult
+    );
+  });
+
+  test("skip token - should not load with skipToken", () => {
+    const { eq } = testContext();
+
+    const effectQueryOptions = eq.infiniteQueryOptions({
+      queryKey: ["test"],
+      queryFn: skipToken,
+      getNextPageParam: () => 1,
+      initialPageParam: 0,
+    });
+
+    expect(effectQueryOptions.enabled).toBe(false);
+  });
+
+  test("skip token - should not load with skipToken", () => {
+    const { eq } = testContext();
+
+    const effectQueryOptions = eq.infiniteQueryOptions({
+      queryKey: ["test"],
+      queryFn: () => Effect.succeed("test"),
+      getNextPageParam: () => 1,
+      initialPageParam: 0,
+    });
+
+    expect(effectQueryOptions.enabled).toBe(true);
   });
 
   test("should work with unused skip token", async () => {
@@ -124,7 +158,15 @@ describe("infiniteQueryOptions", () => {
       }
     );
 
-    expect(defaultResult.current.data).toEqual(effectQueryResult.current.data);
+    await afterQueryFinish(
+      () => {
+        expect(defaultResult.current.data).toEqual(
+          effectQueryResult.current.data
+        );
+      },
+      defaultResult,
+      effectQueryResult
+    );
   });
 
   test("should work with undefined initial data", async () => {
@@ -165,7 +207,15 @@ describe("infiniteQueryOptions", () => {
       }
     );
 
-    expect(defaultResult.current.data).toEqual(effectQueryResult.current.data);
+    await afterQueryFinish(
+      () => {
+        expect(defaultResult.current.data).toEqual(
+          effectQueryResult.current.data
+        );
+      },
+      defaultResult,
+      effectQueryResult
+    );
   });
 
   test("should work with suspenseQuery", async () => {
@@ -202,6 +252,14 @@ describe("infiniteQueryOptions", () => {
       }
     );
 
-    expect(defaultResult.current.data).toEqual(effectQueryResult.current.data);
+    await afterQueryFinish(
+      () => {
+        expect(defaultResult.current.data).toEqual(
+          effectQueryResult.current.data
+        );
+      },
+      defaultResult,
+      effectQueryResult
+    );
   });
 });
