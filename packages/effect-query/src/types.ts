@@ -29,11 +29,11 @@ export type InferQueryErrorResult<TFnErrorResult extends { _tag: string }> = [
   ? EffectQueryDefect<unknown>
   : EffectQueryFailure<TFnErrorResult> | EffectQueryDefect<unknown>;
 
-export type EffectQueryApi = {
+export type EffectQuery<Input> = {
   queryOptions: <
     TFnResult,
     TFnErrorResult extends { _tag: string },
-    TFnRequirements,
+    TFnRequirements extends Input,
   >(
     inputOptions: EffectQueryOptionsInput<
       TFnResult,
@@ -46,7 +46,7 @@ export type EffectQueryApi = {
   infiniteQueryOptions: <
     TQueryFnData,
     TError extends { _tag: string },
-    TRequirements,
+    TRequirements extends Input,
     TData = InfiniteData<TQueryFnData>,
     TPageParam = unknown,
   >(
@@ -69,7 +69,7 @@ export type EffectQueryApi = {
   mutationOptions: <
     TFnResult,
     TFnErrorResult extends { _tag: string },
-    TFnRequirements,
+    TFnRequirements extends Input,
     TVariables,
   >(
     inputOptions: EffectQueryMutationOptionsInput<
