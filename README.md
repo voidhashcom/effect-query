@@ -140,17 +140,17 @@ export default function UpdateUserPage({ id }: { id: string }) {
 // src/utils/effect-query.ts
 import { createEffectQuery } from "effect-query";
 import { Layer } from "effect";
-import { HttpApiClient } from "@effect/http-api";
+import { HttpApiClient } from "@effect/platform";
 import { HttpApiSpec } from "./http-api-spec";
 
 // Create your ApiClient service
 export class ApiClient extends Effect.Service<ApiClient>()(
-  'example/ApiClient',
+  "example/ApiClient",
   {
-    dependencies: [],
+    dependencies: [FetchHttpClient.layer],
     effect: HttpApiClient.make(HttpApiSpec, {
-      baseUrl: "https://api.example.com"
-    });
+      baseUrl: "https://api.example.com",
+    }),
   }
 ) {}
 
@@ -164,15 +164,16 @@ export default function HomeRoute() {
   const { data, status, error } = useQuery(
     eq.queryOptions({
       queryKey: ["example", "hello-world"],
-      queryFn: () => Effect.gen(function* () {
-        const apiClient = yield* ApiClient;
-        return yield* apiClient.hello.helloWorld({ /* ... */ });
-      }),
+      queryFn: () =>
+        Effect.gen(function* () {
+          const apiClient = yield* ApiClient;
+          return yield* apiClient.hello.helloWorld({
+            /* ... */
+          });
+        }),
     })
   );
 }
-
-
 ```
 
 # Usage with Effect RPC
