@@ -16,7 +16,7 @@ export class EffectQueryRunner<
     options: { signal?: AbortSignal } = {}
   ): Promise<Exit.Exit<TResult, TError>> {
     const runnable = Effect.scoped(
-      effect.pipe(Effect.withSpan(span), Effect.tapErrorCause(Effect.logError))
+      effect.pipe(Effect.withSpan(span), Effect.tapCause(Effect.logError))
     );
     return await this.runtime.runPromiseExit(runnable, {
       signal: options.signal,

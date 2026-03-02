@@ -3,7 +3,7 @@ import {
   mutationOptions,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { Cause, type Effect, Exit } from "effect";
+import { Cause, type Effect, Exit, Option } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type { EffectQueryRunner } from "./runner";
@@ -101,9 +101,9 @@ export function createEffectMutationOptions<Input>(
       return Exit.match(result, {
         onSuccess: (value) => value,
         onFailure: (cause) => {
-          if (cause._tag === "Fail") {
-            const failure = cause.error;
-            throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
+          const errorOption = Cause.findErrorOption(cause);
+          if (Option.isSome(errorOption)) {
+            throw new EffectQueryFailure(Cause.pretty(cause), errorOption.value, cause);
           }
           throw new EffectQueryDefect(Cause.pretty(cause), cause);
         },
