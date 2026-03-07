@@ -1,16 +1,24 @@
 /** biome-ignore-all lint/style/noMagicNumbers: dev example */
 /** biome-ignore-all lint/correctness/noNestedComponentDefinitions: not components */
 import { useQuery } from "@tanstack/react-query";
-import { Cause, Data, Effect, Layer } from "effect";
+import { Cause, Data, Effect, Layer, ServiceMap } from "effect";
 import { createEffectQuery } from "effect-query";
 
 class QueryError extends Data.TaggedError("QueryError")<{ hello: string }> {}
 class TestError extends Data.TaggedError("TestError")<{ message: string }> {}
-export const eq = createEffectQuery(Layer.empty);
 
-const queryOptions = eq.queryOptions({
-  queryKey: ["namespace"],
-  queryFn: () =>
+class GreetingApi extends ServiceMap.Service<
+  GreetingApi,
+  {
+    readonly loadGreeting: () => Effect.Effect<
+      string,
+      QueryError | TestError
+    >;
+  }
+>()("example/GreetingApi") {}
+
+const GreetingApiLive = Layer.succeed(GreetingApi)({
+  loadGreeting: () =>
     Effect.gen(function* () {
       if (Math.random() < 0.5) {
         return yield* Effect.fail(new QueryError({ hello: "world" }));
@@ -19,6 +27,17 @@ const queryOptions = eq.queryOptions({
         return yield* Effect.fail(new TestError({ message: "Test error" }));
       }
       return "Hello, world!";
+    }),
+});
+
+export const eq = createEffectQuery(GreetingApiLive);
+
+const queryOptions = eq.queryOptions({
+  queryKey: ["namespace"],
+  queryFn: () =>
+    Effect.gen(function* () {
+      const greetingApi = yield* GreetingApi;
+      return yield* greetingApi.loadGreeting();
     }),
 });
 
@@ -38,6 +57,7 @@ export default function HomeRoute() {
 
   return (
     <div>
+      <p>Uses a `ServiceMap.Service` provided through a v4 `Layer`.</p>
       {status === "pending" && <div>Loading...</div>}
       {status === "success" && <div>{data}</div>}
     </div>
