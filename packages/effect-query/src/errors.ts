@@ -8,6 +8,7 @@ type EffectQueryErrorMatcher<
   TReturn = unknown,
 > = {
   OrElse: (cause: Cause.Cause<unknown>) => TReturn;
+  [key: string]: unknown;
 } & ([TFailure] extends [never]
   ? Record<never, never>
   : TFailure extends { _tag: string }
@@ -60,15 +61,27 @@ export class EffectQueryFailure<
 export class EffectQueryDefect<TDefect> extends Error {
   readonly _tag: typeof EffectQueryDefectTag;
   readonly defectCause: Cause.Cause<TDefect>;
-  constructor(message: string, defect: TDefect) {
+  constructor(message: string, defectCause: Cause.Cause<TDefect>) {
     super(message);
     this._tag = EffectQueryDefectTag;
-    this.defectCause = Cause.die(defect);
+    this.defectCause = defectCause;
   }
 
   match<TReturn>(
-    matcher: EffectQueryErrorMatcher<never, TReturn> & Record<string, unknown>
+    matcher: EffectQueryErrorMatcher<never, TReturn>
   ): TReturn {
     return matcher.OrElse(this.defectCause);
   }
+}
+
+export function makeEffectQueryError<TFailure extends { _tag: string }>(
+  cause: Cause.Cause<TFailure>
+): EffectQueryFailure<TFailure> | EffectQueryDefect<unknown> {
+  const failure = cause.reasons.find(Cause.isFailReason);
+
+  if (failure) {
+    return new EffectQueryFailure(Cause.pretty(cause), failure.error, cause);
+  }
+
+  return new EffectQueryDefect(Cause.pretty(cause), cause);
 }

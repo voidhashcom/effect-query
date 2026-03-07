@@ -1,4 +1,4 @@
-import { Effect, type Exit } from "effect";
+import { Cause, Effect, type Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
 
 export class EffectQueryRunner<
@@ -16,9 +16,12 @@ export class EffectQueryRunner<
     options: { signal?: AbortSignal } = {}
   ): Promise<Exit.Exit<TResult, TError>> {
     const runnable = Effect.scoped(
-      effect.pipe(Effect.withSpan(span), Effect.tapErrorCause(Effect.logError))
+      effect.pipe(
+        Effect.withSpan(span),
+        Effect.tapCause((cause) => Effect.logError(Cause.pretty(cause)))
+      )
     );
-    return await this.runtime.runPromiseExit(runnable, {
+    return await this.runtime.runPromiseExit<TResult, TError>(runnable, {
       signal: options.signal,
     });
   }

@@ -8,9 +8,13 @@ import {
   type UndefinedInitialDataInfiniteOptions,
   type UnusedSkipTokenInfiniteOptions,
 } from "@tanstack/react-query";
-import { Cause, Effect, Exit } from "effect";
+import { Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
-import { EffectQueryDefect, EffectQueryFailure } from "./errors";
+import {
+  EffectQueryDefect,
+  EffectQueryFailure,
+  makeEffectQueryError,
+} from "./errors";
 import type { EffectQueryRunner } from "./runner";
 import type { InfiniteData, SkipTokenLike } from "./types";
 
@@ -225,37 +229,30 @@ export function createEffectInfiniteQueryOptions<Input>(
   function effectInfiniteQueryOptions<
     TQueryFnData,
     TError extends { _tag: string },
-    TRequirements,
+    TRequirements extends Input,
     TData = InfiniteData<TQueryFnData>,
     TPageParam = unknown,
+    TInput extends EffectInfiniteQueryOptionsInput<
+      TQueryFnData,
+      TError,
+      TRequirements,
+      TData,
+      TPageParam
+    > = EffectInfiniteQueryOptionsInput<
+      TQueryFnData,
+      TError,
+      TRequirements,
+      TData,
+      TPageParam
+    >,
   >(
-    inputOptions: EffectInfiniteQueryOptionsInput<
-      TQueryFnData,
-      TError,
-      TRequirements,
-      TData,
-      TPageParam
-    >
-  ): EffectInfiniteQueryOptionsReturn<
-    EffectInfiniteQueryOptionsInput<
-      TQueryFnData,
-      TError,
-      TRequirements,
-      TData,
-      TPageParam
-    >
-  > {
+    inputOptions: TInput
+  ): EffectInfiniteQueryOptionsReturn<TInput> {
     const [spanName] = inputOptions.queryKey;
 
-    const queryFn: EffectInfiniteQueryOptionsReturn<
-      EffectInfiniteQueryOptionsInput<
-        TQueryFnData,
-        TError,
-        TRequirements,
-        TData,
-        TPageParam
-      >
-    >["queryFn"] = async (queryFnContext) => {
+    const queryFn: EffectInfiniteQueryOptionsReturn<TInput>["queryFn"] = async (
+      queryFnContext
+    ) => {
       // Assert
       if (
         typeof inputOptions.queryFn === "symbol" &&
@@ -282,11 +279,7 @@ export function createEffectInfiniteQueryOptions<Input>(
       return Exit.match(result, {
         onSuccess: (value) => value as TQueryFnData,
         onFailure: (cause) => {
-          if (cause._tag === "Fail") {
-            const failure = cause.error;
-            throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
-          }
-          throw new EffectQueryDefect(Cause.pretty(cause), cause);
+          throw makeEffectQueryError(cause);
         },
       });
     };
@@ -299,15 +292,7 @@ export function createEffectInfiniteQueryOptions<Input>(
       ...inputOptions,
       enabled: isEnabled,
       queryFn,
-    }) as unknown as EffectInfiniteQueryOptionsReturn<
-      EffectInfiniteQueryOptionsInput<
-        TQueryFnData,
-        TError,
-        TRequirements,
-        TData,
-        TPageParam
-      >
-    >;
+    }) as unknown as EffectInfiniteQueryOptionsReturn<TInput>;
   }
 
   return effectInfiniteQueryOptions;

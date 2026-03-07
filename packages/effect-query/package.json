@@ -35,12 +35,12 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.2.6",
-    "@tanstack/react-query": "^5.90.5",
+    "@tanstack/react-query": "^5.90.8",
     "@types/react": "^19.1.0",
     "@vitejs/plugin-react": "^5.1.0",
     "@vitest/browser-playwright": "^4.0.6",
     "@vitest/browser-preview": "^4.0.6",
-    "effect": "^3.18.4",
+    "effect": "4.0.0-beta.28",
     "playwright": "^1.56.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -50,8 +50,9 @@
     "vitest-browser-react": "^2.0.2"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.90.5",
-    "effect": "^3.18.4",
+    "@tanstack/react-query": "^5.90.8",
+    "@tanstack/react-db": "^0.1.75",
+    "effect": "4.0.0-beta.28",
     "react": ">=18.2.0"
   }
 }

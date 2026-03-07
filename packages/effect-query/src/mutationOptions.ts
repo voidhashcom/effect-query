@@ -3,9 +3,9 @@ import {
   mutationOptions,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { Cause, type Effect, Exit } from "effect";
+import { type Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
-import { EffectQueryDefect, EffectQueryFailure } from "./errors";
+import { makeEffectQueryError } from "./errors";
 import type { EffectQueryRunner } from "./runner";
 import type { InferQueryErrorResult } from "./types";
 
@@ -67,32 +67,26 @@ export function createEffectMutationOptions<Input>(
   function effectMutationOptions<
     TFnResult,
     TError extends { _tag: string },
-    TRequirements,
+    TRequirements extends Input,
     TVariables,
+    TInput extends EffectQueryMutationOptionsInput<
+      TFnResult,
+      TError,
+      TRequirements,
+      TVariables
+    > = EffectQueryMutationOptionsInput<
+      TFnResult,
+      TError,
+      TRequirements,
+      TVariables
+    >,
   >(
-    inputOptions: EffectQueryMutationOptionsInput<
-      TFnResult,
-      TError,
-      TRequirements,
-      TVariables
-    >
-  ): EffectMutationOptionsReturn<
-    EffectQueryMutationOptionsInput<
-      TFnResult,
-      TError,
-      TRequirements,
-      TVariables
-    >
-  > {
+    inputOptions: TInput
+  ): EffectMutationOptionsReturn<TInput> {
     const spanName = inputOptions.mutationKey?.[0] ?? "effect-query-mutation";
-    const mutationFn: EffectMutationOptionsReturn<
-      EffectQueryMutationOptionsInput<
-        TFnResult,
-        TError,
-        TRequirements,
-        TVariables
-      >
-    >["mutationFn"] = async (variables) => {
+    const mutationFn: EffectMutationOptionsReturn<TInput>["mutationFn"] = async (
+      variables
+    ) => {
       const effect = inputOptions.mutationFn(variables);
       const result = await runner.run(
         effect,
@@ -101,11 +95,7 @@ export function createEffectMutationOptions<Input>(
       return Exit.match(result, {
         onSuccess: (value) => value,
         onFailure: (cause) => {
-          if (cause._tag === "Fail") {
-            const failure = cause.error;
-            throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
-          }
-          throw new EffectQueryDefect(Cause.pretty(cause), cause);
+          throw makeEffectQueryError(cause);
         },
       });
     };
@@ -113,14 +103,7 @@ export function createEffectMutationOptions<Input>(
     return mutationOptions({
       ...inputOptions,
       mutationFn,
-    }) as unknown as EffectMutationOptionsReturn<
-      EffectQueryMutationOptionsInput<
-        TFnResult,
-        TError,
-        TRequirements,
-        TVariables
-      >
-    >;
+    }) as unknown as EffectMutationOptionsReturn<TInput>;
   }
 
   return effectMutationOptions;

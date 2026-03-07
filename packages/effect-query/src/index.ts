@@ -21,7 +21,7 @@ export function createEffectQueryFromManagedRuntime<Input>(
     queryOptions: createEffectQueryQueryOptions(runner),
     infiniteQueryOptions: createEffectInfiniteQueryOptions(runner),
     mutationOptions: createEffectMutationOptions(runner),
-  };
+  } as EffectQuery<Input>;
 }
 
 export type * from "./types";

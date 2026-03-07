@@ -8,9 +8,9 @@ import {
   type UndefinedInitialDataOptions,
   type UnusedSkipTokenOptions,
 } from "@tanstack/react-query";
-import { Cause, Effect, Exit } from "effect";
+import { Effect, Exit } from "effect";
 import type { ManagedRuntime } from "effect/ManagedRuntime";
-import { EffectQueryDefect, EffectQueryFailure } from "./errors";
+import { makeEffectQueryError } from "./errors";
 import type { EffectQueryRunner } from "./runner";
 import type { InferQueryErrorResult, SkipTokenLike } from "./types";
 
@@ -180,7 +180,7 @@ export function createEffectQueryQueryOptions<Input>(
   function effectQueryQueryOptions<
     TFnResult,
     TFnErrorResult extends { _tag: string },
-    TFnRequirements,
+    TFnRequirements extends Input,
     TInput extends EffectQueryOptionsInput<
       TFnResult,
       TFnErrorResult,
@@ -188,9 +188,7 @@ export function createEffectQueryQueryOptions<Input>(
     >,
   >(
     inputOptions: TInput
-  ): EffectQueryOptionsReturn<
-    EffectQueryOptionsInput<TFnResult, TFnErrorResult, TFnRequirements>
-  > {
+  ): EffectQueryOptionsReturn<TInput> {
     const [spanName] = inputOptions.queryKey;
 
     const queryFn: EffectQueryOptionsReturn<TInput>["queryFn"] = async (
@@ -222,11 +220,7 @@ export function createEffectQueryQueryOptions<Input>(
       return Exit.match(result, {
         onSuccess: (value) => value,
         onFailure: (cause) => {
-          if (cause._tag === "Fail") {
-            const failure = cause.error;
-            throw new EffectQueryFailure(Cause.pretty(cause), failure, cause);
-          }
-          throw new EffectQueryDefect(Cause.pretty(cause), cause);
+          throw makeEffectQueryError(cause);
         },
       }) as ExtractQueryResult<TInput>;
     };

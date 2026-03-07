@@ -12,6 +12,7 @@ export default function HomeRoute() {
     <div>
       <NavLink to="/examples/base/base-query"> Base Query</NavLink>
       <NavLink to="/examples/base/base-mutation"> Base Mutation</NavLink>
+      <NavLink to="/examples/tanstack-db/simple"> TanStack DB</NavLink>
     </div>
   );
 }

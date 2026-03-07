@@ -9,7 +9,7 @@ class TestError extends Data.TaggedError("TestError")<{ message: string }> {}
 export const eq = createEffectQuery(Layer.empty);
 
 const queryOptions = eq.queryOptions({
-  queryKey: ["namespace"],
+  queryKey: ["namespace"] as const,
   queryFn: () =>
     Effect.gen(function* () {
       if (Math.random() < 0.5) {
@@ -23,14 +23,14 @@ const queryOptions = eq.queryOptions({
 });
 
 export default function HomeRoute() {
-  const { data, status, error } = useQuery(queryOptions);
+  const { data, error, isPending, isSuccess } = useQuery(queryOptions);
 
   // Usage with suspense
   // const suspenseQueryOptions = useSuspenseQuery(queryOptions);
 
-  if (status === "error" && error) {
+  if (error) {
     return error.match({
-      // TestError: (testError) => <div>Test error: {testError.message}</div>,
+      TestError: (testError) => <div>Test error: {testError.message}</div>,
       QueryError: (queryError) => <div>Query error: {queryError.hello}</div>,
       OrElse: (cause) => <div>Error: {Cause.pretty(cause)}</div>,
     });
@@ -38,8 +38,8 @@ export default function HomeRoute() {
 
   return (
     <div>
-      {status === "pending" && <div>Loading...</div>}
-      {status === "success" && <div>{data}</div>}
+      {isPending && <div>Loading...</div>}
+      {isSuccess && <div>{data}</div>}
     </div>
   );
 }

@@ -14,6 +14,9 @@ export default [
         route("base-query", "routes/examples/base/base-query.tsx"),
         route("base-mutation", "routes/examples/base/base-mutation.tsx"),
       ]),
+      ...prefix("tanstack-db", [
+        route("simple", "routes/examples/tanstack-db/simple.tsx"),
+      ]),
     ]),
   ]),
 ] satisfies RouteConfig;

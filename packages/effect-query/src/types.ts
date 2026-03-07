@@ -34,58 +34,55 @@ export type EffectQuery<Input> = {
     TFnResult,
     TFnErrorResult extends { _tag: string },
     TFnRequirements extends Input,
-  >(
-    inputOptions: EffectQueryOptionsInput<
+    TInput extends EffectQueryOptionsInput<
       TFnResult,
       TFnErrorResult,
       TFnRequirements
-    >
-  ) => EffectQueryOptionsReturn<
-    EffectQueryOptionsInput<TFnResult, TFnErrorResult, TFnRequirements>
-  >;
+    > = EffectQueryOptionsInput<TFnResult, TFnErrorResult, TFnRequirements>,
+  >(
+    inputOptions: TInput
+  ) => EffectQueryOptionsReturn<TInput>;
   infiniteQueryOptions: <
     TQueryFnData,
     TError extends { _tag: string },
     TRequirements extends Input,
     TData = InfiniteData<TQueryFnData>,
     TPageParam = unknown,
+    TInput extends EffectInfiniteQueryOptionsInput<
+      TQueryFnData,
+      TError,
+      TRequirements,
+      TData,
+      TPageParam
+    > = EffectInfiniteQueryOptionsInput<
+      TQueryFnData,
+      TError,
+      TRequirements,
+      TData,
+      TPageParam
+    >,
   >(
-    inputOptions: EffectInfiniteQueryOptionsInput<
-      TQueryFnData,
-      TError,
-      TRequirements,
-      TData,
-      TPageParam
-    >
-  ) => EffectInfiniteQueryOptionsReturn<
-    EffectInfiniteQueryOptionsInput<
-      TQueryFnData,
-      TError,
-      TRequirements,
-      TData,
-      TPageParam
-    >
-  >;
+    inputOptions: TInput
+  ) => EffectInfiniteQueryOptionsReturn<TInput>;
   mutationOptions: <
     TFnResult,
     TFnErrorResult extends { _tag: string },
     TFnRequirements extends Input,
     TVariables,
+    TInput extends EffectQueryMutationOptionsInput<
+      TFnResult,
+      TFnErrorResult,
+      TFnRequirements,
+      TVariables
+    > = EffectQueryMutationOptionsInput<
+      TFnResult,
+      TFnErrorResult,
+      TFnRequirements,
+      TVariables
+    >,
   >(
-    inputOptions: EffectQueryMutationOptionsInput<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      TVariables
-    >
-  ) => EffectMutationOptionsReturn<
-    EffectQueryMutationOptionsInput<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements,
-      TVariables
-    >
-  >;
+    inputOptions: TInput
+  ) => EffectMutationOptionsReturn<TInput>;
 };
 
 export type * from "./infiniteQueryOptions";
