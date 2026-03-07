@@ -14,6 +14,10 @@ export default [
         route("base-query", "routes/examples/base/base-query.tsx"),
         route("base-mutation", "routes/examples/base/base-mutation.tsx"),
       ]),
+      ...prefix("rpc", [
+        route("rpc-query", "routes/examples/rpc/rpc-query.tsx"),
+        route("rpc-mutation", "routes/examples/rpc/rpc-mutation.tsx"),
+      ]),
     ]),
   ]),
 ] satisfies RouteConfig;

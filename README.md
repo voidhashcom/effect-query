@@ -26,19 +26,30 @@ npm install @tanstack/react-query effect
 
 # Initialize
 
-```ts
+```tsx
 // src/utils/effect-query.ts
+import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
-import { Layer } from "effect";
+import { Effect, Layer, ManagedRuntime, ServiceMap } from "effect";
 
-export const eq = createEffectQuery(Layer.empty);
+export class GreetingApi extends ServiceMap.Service<
+  GreetingApi,
+  {
+    readonly loadGreeting: () => Effect.Effect<string>;
+  }
+>()("example/GreetingApi") {}
+
+const GreetingApiLive = Layer.succeed(GreetingApi)({
+  loadGreeting: () => Effect.succeed("Hello, world!"),
+});
+
+export const eq = createEffectQuery(GreetingApiLive);
 
 // Alternative: Create from effect-query from ManagedRuntime instead of Layer
 import { createEffectQueryFromManagedRuntime } from "effect-query";
-import { Layer, ManagedRuntime } from "effect";
 
-const managedRuntime = ManagedRuntime.make(Layer.empty);
-export const eq = createEffectQueryFromManagedRuntime(managedRuntime);
+const runtime = ManagedRuntime.make(GreetingApiLive);
+export const eqFromRuntime = createEffectQueryFromManagedRuntime(runtime);
 ```
 
 # Query Example
@@ -47,14 +58,17 @@ export const eq = createEffectQueryFromManagedRuntime(managedRuntime);
 // src/pages/example.tsx
 import { useQuery } from "@tanstack/react-query";
 import { Effect } from "effect";
-import { eq } from "./effect-query";
+import { GreetingApi, eq } from "./effect-query";
 
-export const eq = createEffectQuery(Layer.empty);
 export default function HomeRoute() {
   const { data, status } = useQuery(
     eq.queryOptions({
       queryKey: ["namespace", "action"],
-      queryFn: () => Effect.succeed("Hello, world!"),
+      queryFn: () =>
+        Effect.gen(function* () {
+          const greetingApi = yield* GreetingApi;
+          return yield* greetingApi.loadGreeting();
+        }),
     })
   );
 
@@ -71,17 +85,48 @@ export default function HomeRoute() {
 
 ```tsx
 // src/pages/users.tsx
-import { eq } from "./effectQuery";
+import { createEffectQueryFromManagedRuntime } from "effect-query";
 import { useMutation } from "@tanstack/react-query";
+import {
+  Console,
+  Data,
+  Duration,
+  Effect,
+  Layer,
+  ManagedRuntime,
+  ServiceMap,
+} from "effect";
+
+class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
+  message: string;
+}> {}
+
+class UserApi extends ServiceMap.Service<
+  UserApi,
+  {
+    readonly updateUser: (id: string) => Effect.Effect<string, UserUpdateError>;
+  }
+>()("example/UserApi") {}
+
+const UserApiLive = Layer.succeed(UserApi)({
+  updateUser: (id: string) =>
+    Effect.gen(function* () {
+      yield* Effect.sleep(Duration.millis(1000));
+      yield* Console.log(`Updating user ${id}...`);
+      return "User updated";
+    }),
+});
+
+const runtime = ManagedRuntime.make(UserApiLive);
+export const eq = createEffectQueryFromManagedRuntime(runtime);
 
 // You can move this outside of the component and even share it with other components
 const updateUserOptions = eq.mutationOptions({
   mutationKey: ["updateUserOptions"],
-  mutationFn: () =>
+  mutationFn: (variables: { id: string }) =>
     Effect.gen(function* () {
-      const user = yield* Effect.sleep(1000);
-      yield* Console.log("Updating user...");
-      return Effect.succeed("User updated");
+      const userApi = yield* UserApi;
+      return yield* userApi.updateUser(variables.id);
     }),
 });
 
@@ -96,7 +141,7 @@ function UpdateUserPage({ id }: { id: string }) {
 When your Effect fails, the error object includes a `match` function that lets you handle different error types in a type-safe manner. When using match, the `OrElse` case is used as a catch-all for all the remaining unhandled failures and for defects. We are not able to fully check if defects can occur and therefore `OrElse` is required.
 
 ```tsx
-function Examle() {
+function Example() {
   const { data, status, error } = useQuery({
     /** ... */
   });
@@ -136,26 +181,29 @@ export default function UpdateUserPage({ id }: { id: string }) {
 
 # Usage with Effect HttpApi
 
-```ts
+```tsx
 // src/utils/effect-query.ts
+import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
-import { Layer } from "effect";
-import { HttpApiClient } from "@effect/platform";
+import { Effect, Layer, ServiceMap } from "effect";
+import { FetchHttpClient } from "effect/unstable/http";
+import { HttpApiClient } from "effect/unstable/httpapi";
 import { HttpApiSpec } from "./http-api-spec";
 
 // Create your ApiClient service
-export class ApiClient extends Effect.Service<ApiClient>()(
-  "example/ApiClient",
-  {
-    dependencies: [FetchHttpClient.layer],
-    effect: HttpApiClient.make(HttpApiSpec, {
-      baseUrl: "https://api.example.com",
-    }),
-  }
-) {}
+export class ApiClient extends ServiceMap.Service<
+  ApiClient,
+  HttpApiClient.ForApi<typeof HttpApiSpec>
+>()("example/ApiClient", {
+  make: HttpApiClient.make(HttpApiSpec, {
+    baseUrl: "https://api.example.com",
+  }),
+}) {}
 
 // Create a final layer for your Effect Query
-export const LiveLayer = Layer.mergeAll(ApiClient.Default);
+export const LiveLayer = Layer.effect(ApiClient)(ApiClient.make).pipe(
+  Layer.provide(FetchHttpClient.layer)
+);
 
 export const eq = createEffectQuery(LiveLayer);
 
@@ -178,12 +226,14 @@ export default function HomeRoute() {
 
 # Usage with Effect RPC
 
-```ts
+```tsx
 // src/utils/effect-query.ts
+import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
-import { Layer } from "effect";
-import { FetchHttpClient } from "@effect/platform";
-import { RpcClient, RpcSerialization } from "@effect/rpc";
+import { Effect, Layer, ServiceMap } from "effect";
+import { FetchHttpClient } from "effect/unstable/http";
+import { RpcClient, RpcSerialization } from "effect/unstable/rpc";
+import { RpcGroups } from "./rpc-schema";
 
 const API_DOMAIN = "https://api.example.com";
 
@@ -191,26 +241,22 @@ const API_DOMAIN = "https://api.example.com";
 export const RpcProtocolLive = RpcClient.layerProtocolHttp({
   url: `${API_DOMAIN}/rpc`,
 }).pipe(
-  Layer.provide([
-    // use fetch for http requests
-    FetchHttpClient.layer
-    // use ndjson for serialization
-    RpcSerialization.layerNdjson,
-  ])
+  Layer.provideMerge(
+    Layer.mergeAll(FetchHttpClient.layer, RpcSerialization.layerNdjson)
+  )
 );
 
 // Create your ApiClient service
-export class MyRpcClient extends Effect.Service<MyRpcClient>()(
-  'example/MyRpcClient',
+export class MyRpcClient extends ServiceMap.Service<MyRpcClient>()(
+  "example/MyRpcClient",
   {
-    dependencies: [],
-    scoped: RpcClient.make(RpcGroups)
+    make: RpcClient.make(RpcGroups),
   }
 ) {}
 
 // Create a final layer for your Effect Query
-export const LiveLayer = MyRpcClient.Default.pipe(
-  Layer.provideMerge(RpcProtocolLive)
+export const LiveLayer = Layer.effect(MyRpcClient)(MyRpcClient.make).pipe(
+  Layer.provide(RpcProtocolLive)
 );
 
 export const eq = createEffectQuery(LiveLayer);
@@ -222,9 +268,46 @@ export default function HomeRoute() {
       queryKey: ["example", "hello-world"],
       queryFn: () => Effect.gen(function* () {
         const rpcClient = yield* MyRpcClient;
-        return yield* rpcClient.HelloWorld()
+        return yield* rpcClient.HelloWorld();
       }),
     })
+  );
+}
+```
+
+# Mutation with Effect RPC
+
+```tsx
+// src/pages/users.tsx
+import { useMutation } from "@tanstack/react-query";
+import { Cause, Effect } from "effect";
+import { MyRpcClient, eq } from "./effect-query";
+
+export default function UpdateUserPage() {
+  const { mutate } = useMutation(
+    eq.mutationOptions({
+      mutationKey: ["example", "rename-user"],
+      mutationFn: (variables: { id: string; name: string }) =>
+        Effect.gen(function* () {
+          const rpcClient = yield* MyRpcClient;
+          return yield* rpcClient.RenameUser(variables);
+        }),
+      onError: (error) =>
+        error.match({
+          RenameUserError: (renameUserError) => {
+            alert(renameUserError.message);
+          },
+          OrElse: (cause) => {
+            alert(`Error updating user: ${Cause.pretty(cause)}`);
+          },
+        }),
+    })
+  );
+
+  return (
+    <button onClick={() => mutate({ id: "user-123", name: "Ripley" })}>
+      Rename User
+    </button>
   );
 }
 ```

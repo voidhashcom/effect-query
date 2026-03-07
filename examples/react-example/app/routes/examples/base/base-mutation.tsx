@@ -10,33 +10,50 @@ import {
   Effect,
   Layer,
   ManagedRuntime,
+  ServiceMap,
 } from "effect";
 import { createEffectQueryFromManagedRuntime } from "effect-query";
-
-export const managedRuntime = ManagedRuntime.make(Layer.empty);
-export const eq = createEffectQueryFromManagedRuntime(managedRuntime);
 
 class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
   message: string;
 }> {}
 
-// You can move this outside of the component and even share it with other components
-const updateUserOptions = eq.mutationOptions({
-  mutationFn: (variables: { id: string }) =>
+class UserApi extends ServiceMap.Service<
+  UserApi,
+  {
+    readonly updateUser: (id: string) => Effect.Effect<string, UserUpdateError>;
+  }
+>()("example/UserApi") {}
+
+const UserApiLive = Layer.succeed(UserApi)({
+  updateUser: (id: string) =>
     Effect.gen(function* () {
       yield* Effect.sleep(Duration.millis(1000));
-      yield* Console.log(`Updating user ${variables.id}...`);
+      yield* Console.log(`Updating user ${id}...`);
       if (Math.random() < 0.5) {
         return yield* Effect.fail(
           new UserUpdateError({ message: "Failed to update user" })
         );
       }
       yield* Console.log("Updating user...");
-      return Effect.succeed("User updated");
+      return "User updated";
     }),
 });
 
-export default function UpdateUserPage({ id }: { id: string }) {
+export const managedRuntime = ManagedRuntime.make(UserApiLive);
+export const eq = createEffectQueryFromManagedRuntime(managedRuntime);
+
+// You can move this outside of the component and even share it with other components
+const updateUserOptions = eq.mutationOptions({
+  mutationFn: (variables: { id: string }) =>
+    Effect.gen(function* () {
+      const userApi = yield* UserApi;
+      return yield* userApi.updateUser(variables.id);
+    }),
+});
+
+export default function UpdateUserPage() {
+  const id = "user-123";
   const { mutate } = useMutation({
     ...updateUserOptions,
     onError: (error) =>
@@ -54,15 +71,18 @@ export default function UpdateUserPage({ id }: { id: string }) {
     },
   });
   return (
-    <button
-      onClick={() =>
-        mutate({
-          id,
-        })
-      }
-      type="button"
-    >
-      Update User
-    </button>
+    <div>
+      <p>Uses a `ManagedRuntime` built from a v4 `ServiceMap.Service`.</p>
+      <button
+        onClick={() =>
+          mutate({
+            id,
+          })
+        }
+        type="button"
+      >
+        Update User
+      </button>
+    </div>
   );
 }
