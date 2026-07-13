@@ -5,12 +5,12 @@ import { useMutation } from "@tanstack/react-query";
 import {
   Cause,
   Console,
+  Context,
   Data,
   Duration,
   Effect,
   Layer,
   ManagedRuntime,
-  ServiceMap,
 } from "effect";
 import { createEffectQueryFromManagedRuntime } from "effect-query";
 
@@ -18,7 +18,7 @@ class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
   message: string;
 }> {}
 
-class UserApi extends ServiceMap.Service<
+class UserApi extends Context.Service<
   UserApi,
   {
     readonly updateUser: (id: string) => Effect.Effect<string, UserUpdateError>;
@@ -72,7 +72,7 @@ export default function UpdateUserPage() {
   });
   return (
     <div>
-      <p>Uses a `ManagedRuntime` built from a v4 `ServiceMap.Service`.</p>
+      <p>Uses a `ManagedRuntime` built from a v4 `Context.Service`.</p>
       <button
         onClick={() =>
           mutate({
