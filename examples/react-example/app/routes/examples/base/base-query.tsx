@@ -1,13 +1,13 @@
 /** biome-ignore-all lint/style/noMagicNumbers: dev example */
 /** biome-ignore-all lint/correctness/noNestedComponentDefinitions: not components */
 import { useQuery } from "@tanstack/react-query";
-import { Cause, Data, Effect, Layer, ServiceMap } from "effect";
+import { Cause, Context, Data, Effect, Layer } from "effect";
 import { createEffectQuery } from "effect-query";
 
 class QueryError extends Data.TaggedError("QueryError")<{ hello: string }> {}
 class TestError extends Data.TaggedError("TestError")<{ message: string }> {}
 
-class GreetingApi extends ServiceMap.Service<
+class GreetingApi extends Context.Service<
   GreetingApi,
   {
     readonly loadGreeting: () => Effect.Effect<
@@ -57,7 +57,7 @@ export default function HomeRoute() {
 
   return (
     <div>
-      <p>Uses a `ServiceMap.Service` provided through a v4 `Layer`.</p>
+      <p>Uses a `Context.Service` provided through a v4 `Layer`.</p>
       {status === "pending" && <div>Loading...</div>}
       {status === "success" && <div>{data}</div>}
     </div>

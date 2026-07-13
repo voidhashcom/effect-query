@@ -30,9 +30,9 @@ npm install @tanstack/react-query effect
 // src/utils/effect-query.ts
 import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
-import { Effect, Layer, ManagedRuntime, ServiceMap } from "effect";
+import { Context, Effect, Layer, ManagedRuntime } from "effect";
 
-export class GreetingApi extends ServiceMap.Service<
+export class GreetingApi extends Context.Service<
   GreetingApi,
   {
     readonly loadGreeting: () => Effect.Effect<string>;
@@ -89,19 +89,19 @@ import { createEffectQueryFromManagedRuntime } from "effect-query";
 import { useMutation } from "@tanstack/react-query";
 import {
   Console,
+  Context,
   Data,
   Duration,
   Effect,
   Layer,
   ManagedRuntime,
-  ServiceMap,
 } from "effect";
 
 class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
   message: string;
 }> {}
 
-class UserApi extends ServiceMap.Service<
+class UserApi extends Context.Service<
   UserApi,
   {
     readonly updateUser: (id: string) => Effect.Effect<string, UserUpdateError>;
@@ -185,13 +185,13 @@ export default function UpdateUserPage({ id }: { id: string }) {
 // src/utils/effect-query.ts
 import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
-import { Effect, Layer, ServiceMap } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { FetchHttpClient } from "effect/unstable/http";
 import { HttpApiClient } from "effect/unstable/httpapi";
 import { HttpApiSpec } from "./http-api-spec";
 
 // Create your ApiClient service
-export class ApiClient extends ServiceMap.Service<
+export class ApiClient extends Context.Service<
   ApiClient,
   HttpApiClient.ForApi<typeof HttpApiSpec>
 >()("example/ApiClient", {
@@ -230,7 +230,7 @@ export default function HomeRoute() {
 // src/utils/effect-query.ts
 import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
-import { Effect, Layer, ServiceMap } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { FetchHttpClient } from "effect/unstable/http";
 import { RpcClient, RpcSerialization } from "effect/unstable/rpc";
 import { RpcGroups } from "./rpc-schema";
@@ -247,7 +247,7 @@ export const RpcProtocolLive = RpcClient.layerProtocolHttp({
 );
 
 // Create your ApiClient service
-export class MyRpcClient extends ServiceMap.Service<MyRpcClient>()(
+export class MyRpcClient extends Context.Service<MyRpcClient>()(
   "example/MyRpcClient",
   {
     make: RpcClient.make(RpcGroups),

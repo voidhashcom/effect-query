@@ -1,4 +1,4 @@
-import { Console, Duration, Effect, Layer, Schema, ServiceMap } from "effect";
+import { Console, Context, Duration, Effect, Layer, Schema } from "effect";
 import { Rpc, type RpcClient, RpcGroup, RpcTest } from "effect/unstable/rpc";
 import { createEffectQuery } from "effect-query";
 
@@ -49,15 +49,13 @@ const ExampleRpcHandlersLive = ExampleRpcGroup.toLayer({
     }),
 });
 
-export class ExampleRpcClient extends ServiceMap.Service<
+export class ExampleRpcClient extends Context.Service<
   ExampleRpcClient,
   RpcClient.FromGroup<typeof ExampleRpcGroup>
->()("example/ExampleRpcClient", {
-  make: RpcTest.makeClient(ExampleRpcGroup),
-}) {}
+>()("example/ExampleRpcClient") {}
 
 export const ExampleRpcClientLive = Layer.effect(ExampleRpcClient)(
-  ExampleRpcClient.make
+  RpcTest.makeClient(ExampleRpcGroup)
 ).pipe(Layer.provide(ExampleRpcHandlersLive));
 
 export const rpcEq = createEffectQuery(ExampleRpcClientLive);
