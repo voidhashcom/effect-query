@@ -5,7 +5,7 @@ import { createEffectQuery } from "effect-query";
 const greetingDelay = Duration.millis(250);
 const renameDelay = Duration.seconds(1);
 
-class RenameUserError extends Schema.TaggedErrorClass<RenameUserError>()(
+class RenameUserError extends Schema.TaggedError<RenameUserError>()(
   "RenameUserError",
   {
     message: Schema.String,
