@@ -1,6 +1,6 @@
 {
   "name": "effect-query",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Effect adapter for Tanstack Query",
   "repository": {
     "type": "git",
@@ -35,7 +35,7 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.4.5",
-    "@tanstack/react-query": "5.102.7",
+    "@tanstack/react-query": "5.102.8",
     "@types/react": "^19.2.14",
     "@vitejs/plugin-react": "^5.1.4",
     "@vitest/browser-playwright": "^4.0.18",
@@ -50,7 +50,7 @@
     "vitest-browser-react": "^2.0.5"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "5.102.7",
+    "@tanstack/react-query": "5.102.8",
     "effect": "4.0.0-beta.107",
     "react": ">=18.2.0"
   }
