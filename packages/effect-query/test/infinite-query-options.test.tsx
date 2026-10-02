@@ -21,46 +21,46 @@ describe("infiniteQueryOptions", () => {
 
     // Default implementation
     const defaultOptions = infiniteQueryOptions({
-      queryKey: ["test"],
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialData: () => ({
+        pageParams: [0],
         pages: [
           {
-            nextCursor: 0,
             data: "test",
+            nextCursor: 0,
           },
         ],
-        pageParams: [0],
       }),
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: 0,
       queryFn: async () => ({
-        nextCursor: 1,
         data: "test",
+        nextCursor: 1,
       }),
+      queryKey: ["test"],
     });
 
     // EffectQuery implementation
     const effectQueryOptions = eq.infiniteQueryOptions({
-      queryKey: ["test"],
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialData: () => ({
+        pageParams: [0],
         pages: [
           {
-            nextCursor: 0,
             data: "test",
+            nextCursor: 0,
           },
         ],
-        pageParams: [0],
       }),
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: 0,
       queryFn: () =>
         // biome-ignore lint/correctness/useYield: test
         Effect.gen(function* () {
           return {
-            nextCursor: 1,
             data: "test",
+            nextCursor: 1,
           };
         }),
+      queryKey: ["test"],
     });
 
     const { result: defaultResult } = await renderHook(
@@ -91,10 +91,10 @@ describe("infiniteQueryOptions", () => {
     const { eq } = testContext();
 
     const effectQueryOptions = eq.infiniteQueryOptions({
-      queryKey: ["test"],
-      queryFn: skipToken,
       getNextPageParam: () => 1,
       initialPageParam: 0,
+      queryFn: skipToken,
+      queryKey: ["test"],
     });
 
     expect(effectQueryOptions.enabled).toBe(false);
@@ -104,10 +104,10 @@ describe("infiniteQueryOptions", () => {
     const { eq } = testContext();
 
     const effectQueryOptions = eq.infiniteQueryOptions({
-      queryKey: ["test"],
-      queryFn: () => Effect.succeed("test"),
       getNextPageParam: () => 1,
       initialPageParam: 0,
+      queryFn: () => Effect.succeed("test"),
+      queryKey: ["test"],
     });
 
     expect(effectQueryOptions.enabled).toBe(true);
@@ -115,34 +115,33 @@ describe("infiniteQueryOptions", () => {
 
   test("should work with unused skip token", async () => {
     const { eq } = testContext();
-    // biome-ignore lint/style/noMagicNumbers:test
     const shouldSkip = Math.random() < 0.5;
     // Default implementation
     const defaultOptions = infiniteQueryOptions({
-      queryKey: ["test"],
-      initialPageParam: 0,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: 0,
       queryFn: shouldSkip
         ? skipToken
         : ({ pageParam }: { pageParam: number }) => ({
-            nextCursor: pageParam + 1,
             data: "test",
+            nextCursor: pageParam + 1,
           }),
+      queryKey: ["test"],
     });
     const effectQueryOptions = eq.infiniteQueryOptions({
-      queryKey: ["test"],
-      initialPageParam: 0,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: 0,
       queryFn: shouldSkip
         ? skipToken
         : ({ pageParam }: { pageParam: number }) =>
             // biome-ignore lint/correctness/useYield: test
             Effect.gen(function* () {
               return {
-                nextCursor: pageParam + 1,
                 data: "test",
+                nextCursor: pageParam + 1,
               };
             }),
+      queryKey: ["test"],
     });
 
     const { result: defaultResult } = await renderHook(
@@ -173,25 +172,25 @@ describe("infiniteQueryOptions", () => {
     const { eq } = testContext();
     // Default implementation
     const defaultOptions = infiniteQueryOptions({
-      queryKey: ["test"],
-      initialPageParam: 0,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: 0,
       queryFn: ({ pageParam }: { pageParam: number }) => ({
-        nextCursor: pageParam + 1,
         data: "test",
+        nextCursor: pageParam + 1,
       }),
+      queryKey: ["test"],
     });
 
     // EffectQuery implementation
     const effectQueryOptions = eq.infiniteQueryOptions({
-      queryKey: ["test"],
-      initialPageParam: 0,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: 0,
       queryFn: ({ pageParam }: { pageParam: number }) =>
         Effect.succeed({
-          nextCursor: pageParam + 1,
           data: "test",
+          nextCursor: pageParam + 1,
         }),
+      queryKey: ["test"],
     });
 
     const { result: defaultResult } = await renderHook(
@@ -221,23 +220,23 @@ describe("infiniteQueryOptions", () => {
   test("should work with suspenseQuery", async () => {
     const { eq } = testContext();
     const defaultOptions = infiniteQueryOptions({
-      queryKey: ["test"],
-      initialPageParam: 0,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: 0,
       queryFn: ({ pageParam }: { pageParam: number }) => ({
-        nextCursor: pageParam + 1,
         data: "test",
+        nextCursor: pageParam + 1,
       }),
+      queryKey: ["test"],
     });
     const effectQueryOptions = eq.infiniteQueryOptions({
-      queryKey: ["test"],
-      initialPageParam: 0,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: 0,
       queryFn: ({ pageParam }: { pageParam: number }) =>
         Effect.succeed({
-          nextCursor: pageParam + 1,
           data: "test",
+          nextCursor: pageParam + 1,
         }),
+      queryKey: ["test"],
     });
     const { result: defaultResult } = await renderHook(
       () => useSuspenseInfiniteQuery(defaultOptions),

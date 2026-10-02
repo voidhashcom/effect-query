@@ -99,14 +99,18 @@ export function createEffectMutationOptions<Input>(
         typeof spanName === "string" ? spanName : "effect-query-mutation"
       );
       return Exit.match(result, {
-        onSuccess: (value) => value,
         onFailure: (cause) => {
           const errorOption = Cause.findErrorOption(cause);
           if (Option.isSome(errorOption)) {
-            throw new EffectQueryFailure(Cause.pretty(cause), errorOption.value, cause);
+            throw new EffectQueryFailure(
+              Cause.pretty(cause),
+              errorOption.value,
+              cause
+            );
           }
           throw new EffectQueryDefect(Cause.pretty(cause), cause);
         },
+        onSuccess: (value) => value,
       });
     };
 

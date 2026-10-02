@@ -1,4 +1,4 @@
-// vitest.config.ts
+// vitest.config.mts
 
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
@@ -7,12 +7,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [react()],
   test: {
-    setupFiles: ["./test/setup-file.tsx"],
     browser: {
       enabled: true,
-      provider: playwright(),
       headless: true,
       instances: [{ browser: "chromium" }],
+      provider: playwright(),
     },
+    setupFiles: ["./test/setup-file.tsx"],
   },
 });

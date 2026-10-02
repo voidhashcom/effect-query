@@ -2,15 +2,15 @@ import type { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import type {
   EffectInfiniteQueryOptionsInput,
   EffectInfiniteQueryOptionsReturn,
-} from "./infiniteQueryOptions";
+} from "./infinite-query-options";
 import type {
   EffectMutationOptionsReturn,
   EffectQueryMutationOptionsInput,
-} from "./mutationOptions";
+} from "./mutation-options";
 import type {
   EffectQueryOptionsInput,
   EffectQueryOptionsReturn,
-} from "./queryOptions";
+} from "./query-options";
 
 // ============================================================================
 // SHARED HELPERS
@@ -18,10 +18,10 @@ import type {
 
 export type SkipTokenLike = symbol;
 
-export type InfiniteData<TData, TPageParam = unknown> = {
-  pages: TData[];
+export interface InfiniteData<TData, TPageParam = unknown> {
   pageParams: TPageParam[];
-};
+  pages: TData[];
+}
 
 export type InferQueryErrorResult<TFnErrorResult extends { _tag: string }> = [
   TFnErrorResult,
@@ -29,20 +29,7 @@ export type InferQueryErrorResult<TFnErrorResult extends { _tag: string }> = [
   ? EffectQueryDefect<unknown>
   : EffectQueryFailure<TFnErrorResult> | EffectQueryDefect<unknown>;
 
-export type EffectQuery<Input> = {
-  queryOptions: <
-    TFnResult,
-    TFnErrorResult extends { _tag: string },
-    TFnRequirements extends Input,
-  >(
-    inputOptions: EffectQueryOptionsInput<
-      TFnResult,
-      TFnErrorResult,
-      TFnRequirements
-    >
-  ) => EffectQueryOptionsReturn<
-    EffectQueryOptionsInput<TFnResult, TFnErrorResult, TFnRequirements>
-  >;
+export interface EffectQuery<Input> {
   infiniteQueryOptions: <
     TQueryFnData,
     TError extends { _tag: string },
@@ -86,8 +73,21 @@ export type EffectQuery<Input> = {
       TVariables
     >
   >;
-};
+  queryOptions: <
+    TFnResult,
+    TFnErrorResult extends { _tag: string },
+    TFnRequirements extends Input,
+  >(
+    inputOptions: EffectQueryOptionsInput<
+      TFnResult,
+      TFnErrorResult,
+      TFnRequirements
+    >
+  ) => EffectQueryOptionsReturn<
+    EffectQueryOptionsInput<TFnResult, TFnErrorResult, TFnRequirements>
+  >;
+}
 
-export type * from "./infiniteQueryOptions";
-export type * from "./mutationOptions";
-export type * from "./queryOptions";
+export type * from "./infinite-query-options";
+export type * from "./mutation-options";
+export type * from "./query-options";

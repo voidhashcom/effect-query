@@ -10,10 +10,7 @@ class TestError extends Data.TaggedError("TestError")<{ message: string }> {}
 class GreetingApi extends Context.Service<
   GreetingApi,
   {
-    readonly loadGreeting: () => Effect.Effect<
-      string,
-      QueryError | TestError
-    >;
+    readonly loadGreeting: () => Effect.Effect<string, QueryError | TestError>;
   }
 >()("example/GreetingApi") {}
 
@@ -33,12 +30,12 @@ const GreetingApiLive = Layer.succeed(GreetingApi)({
 export const eq = createEffectQuery(GreetingApiLive);
 
 const queryOptions = eq.queryOptions({
-  queryKey: ["namespace"],
   queryFn: () =>
     Effect.gen(function* () {
       const greetingApi = yield* GreetingApi;
       return yield* greetingApi.loadGreeting();
     }),
+  queryKey: ["namespace"],
 });
 
 export default function HomeRoute() {
@@ -49,9 +46,9 @@ export default function HomeRoute() {
 
   if (status === "error" && error) {
     return error.match({
+      OrElse: (cause) => <div>Error: {Cause.pretty(cause)}</div>,
       // TestError: (testError) => <div>Test error: {testError.message}</div>,
       QueryError: (queryError) => <div>Query error: {queryError.hello}</div>,
-      OrElse: (cause) => <div>Error: {Cause.pretty(cause)}</div>,
     });
   }
 

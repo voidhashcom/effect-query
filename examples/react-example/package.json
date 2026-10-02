@@ -7,25 +7,24 @@
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
-    "@react-router/node": "^7.13.1",
-    "@react-router/serve": "^7.13.1",
-    "@tanstack/react-query": "5.101.4",
-    "effect": "4.0.0-beta.104",
+    "@react-router/node": "^8.4.0",
+    "@react-router/serve": "^8.4.0",
+    "@tanstack/react-query": "5.104.0",
+    "effect": "4.0.0",
     "effect-query": "workspace:*",
-    "isbot": "^5.1.35",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router": "^7.13.1"
+    "isbot": "^5.2.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0"
   },
   "devDependencies": {
-    "@react-router/dev": "^7.13.1",
-    "@tailwindcss/vite": "^4.2.1",
-    "@types/node": "^25.3.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vite-tsconfig-paths": "^6.1.1"
+    "@react-router/dev": "^8.4.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
   }
 }

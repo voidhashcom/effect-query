@@ -6,12 +6,8 @@
     "type": "git",
     "url": "https://github.com/voidhashcom/effect-query.git"
   },
-  "scripts": {
-    "build": "tsdown",
-    "lint": "biome check .",
-    "typecheck": "tsc --noEmit --pretty",
-    "test": "vitest --typecheck"
-  },
+  "license": "MIT",
+  "author": "Dominik Vít <dominik@voidhash.com>",
   "exports": {
     ".": {
       "import": {
@@ -31,27 +27,31 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "author": "Dominik Vít <dominik@voidhash.com>",
-  "license": "MIT",
+  "scripts": {
+    "build": "tsdown",
+    "lint": "biome check .",
+    "test": "vitest --typecheck",
+    "typecheck": "tsc --noEmit --pretty"
+  },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.5",
-    "@tanstack/react-query": "5.101.4",
-    "@types/react": "^19.2.14",
-    "@vitejs/plugin-react": "^5.1.4",
-    "@vitest/browser-playwright": "^4.0.18",
-    "@vitest/browser-preview": "^4.0.18",
-    "effect": "4.0.0-beta.104",
-    "playwright": "^1.58.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "tsdown": "0.21.0-beta.2",
-    "ultracite": "^7.2.4",
-    "vitest": "^4.0.18",
-    "vitest-browser-react": "^2.0.5"
+    "@biomejs/biome": "^2.5.15",
+    "@tanstack/react-query": "5.104.0",
+    "@types/react": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/browser-playwright": "^5.0.3",
+    "@vitest/browser-preview": "^5.0.3",
+    "effect": "4.0.0",
+    "playwright": "^1.63.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsdown": "0.23.0",
+    "ultracite": "^7.12.2",
+    "vitest": "^5.0.3",
+    "vitest-browser-react": "^2.3.0"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "5.101.4",
-    "effect": "4.0.0-beta.104",
+    "@tanstack/react-query": "^5.104.0",
+    "effect": "^4.0.0",
     "react": ">=18.2.0"
   }
 }

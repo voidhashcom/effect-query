@@ -15,12 +15,12 @@ describe("mutationOptions", () => {
   test("should work with successful mutation", async () => {
     const { eq } = testContext();
     mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: async () => "success",
+      mutationKey: ["test-mutation"],
     });
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: () => Effect.succeed("success"),
+      mutationKey: ["test-mutation"],
     });
 
     const { result } = await renderHook(
@@ -46,15 +46,15 @@ describe("mutationOptions", () => {
   test("should work with mutation variables", async () => {
     const { eq } = testContext();
     mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: async (variables: { id: string; name: string }) =>
         `Updated ${variables.name} (${variables.id})`,
+      mutationKey: ["test-mutation"],
     });
 
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: (variables: { id: string; name: string }) =>
         Effect.succeed(`Updated ${variables.name} (${variables.id})`),
+      mutationKey: ["test-mutation"],
     });
 
     const { result } = await renderHook(
@@ -83,8 +83,8 @@ describe("mutationOptions", () => {
 
     const { eq } = testContext();
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: () => Effect.fail(new TestError({ message: "Test failed" })),
+      mutationKey: ["test-mutation"],
     });
 
     const { result } = await renderHook(
@@ -113,8 +113,8 @@ describe("mutationOptions", () => {
   test("should handle EffectQueryDefect errors", async () => {
     const { eq } = testContext();
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: () => Effect.die("Something went wrong"),
+      mutationKey: ["test-mutation"],
     });
 
     const { result } = await renderHook(
@@ -143,8 +143,8 @@ describe("mutationOptions", () => {
 
     const { eq } = testContext();
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: () => Effect.fail(new TestError({ message: "Test failed" })),
+      mutationKey: ["test-mutation"],
     });
 
     let matchedError: string | null = null;
@@ -155,8 +155,8 @@ describe("mutationOptions", () => {
           ...effectMutationOptions,
           onError: (error) => {
             matchedError = error.match({
-              TestError: (err) => err.message,
               OrElse: () => "Unknown error",
+              TestError: (err) => err.message,
             });
           },
         }),
@@ -210,8 +210,8 @@ describe("mutationOptions", () => {
   test("should work with mutationKey as string", async () => {
     const { eq } = testContext();
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["custom-mutation"],
       mutationFn: () => Effect.succeed("success"),
+      mutationKey: ["custom-mutation"],
     });
 
     const { result } = await renderHook(
@@ -236,12 +236,12 @@ describe("mutationOptions", () => {
   test("should work with async Effect operations", async () => {
     const { eq } = testContext();
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: (variables: { delay: number }) =>
         Effect.gen(function* () {
           yield* Effect.sleep(`${variables.delay} millis`);
           return `Delayed by ${variables.delay}ms`;
         }),
+      mutationKey: ["test-mutation"],
     });
 
     const { result } = await renderHook(
@@ -266,8 +266,8 @@ describe("mutationOptions", () => {
   test("should work with OrElse error handler", async () => {
     const { eq } = testContext();
     const effectMutationOptions = eq.mutationOptions({
-      mutationKey: ["test-mutation"],
       mutationFn: () => Effect.die("Unexpected defect"),
+      mutationKey: ["test-mutation"],
     });
 
     let handledError: string | null = null;

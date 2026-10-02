@@ -5,8 +5,6 @@
     "target": "es2022",
     "declaration": true,
     "declarationMap": true,
-    "declarationDir": "dist",
-    "outDir": "./dist",
     "strict": true,
     "strictNullChecks": true,
     "noUnusedLocals": false,
