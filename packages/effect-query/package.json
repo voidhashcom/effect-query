@@ -40,6 +40,16 @@
         "default": "./dist/solid.cjs"
       }
     },
+    "./svelte": {
+      "import": {
+        "types": "./dist/svelte.d.mts",
+        "default": "./dist/svelte.mjs"
+      },
+      "require": {
+        "types": "./dist/svelte.d.cts",
+        "default": "./dist/svelte.cjs"
+      }
+    },
     "./vue": {
       "import": {
         "types": "./dist/vue.d.mts",
@@ -70,8 +80,10 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "@solidjs/testing-library": "^0.8.10",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tanstack/react-query": "5.104.0",
     "@tanstack/solid-query": "5.104.0",
+    "@tanstack/svelte-query": "6.3.0",
     "@tanstack/vue-query": "5.104.0",
     "@types/react": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
@@ -83,22 +95,26 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "solid-js": "^1.9.15",
+    "svelte": "^5.57.1",
     "tsdown": "0.23.0",
     "typescript6": "npm:typescript@^6.0.3",
     "ultracite": "^7.12.2",
     "vite-plugin-solid": "^2.11.14",
     "vitest": "^5.0.3",
     "vitest-browser-react": "^2.3.0",
+    "vitest-browser-svelte": "^3.1.0",
     "vitest-browser-vue": "^3.1.0",
     "vue": "^3.5.43"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/solid-query": "^5.104.0",
+    "@tanstack/svelte-query": "^6.3.0",
     "@tanstack/vue-query": "^5.104.0",
     "effect": "^4.0.0",
     "react": ">=18.2.0",
     "solid-js": "^1.6.0",
+    "svelte": "^5.25.0",
     "vue": ">=3.3.0"
   },
   "peerDependenciesMeta": {
@@ -108,6 +124,9 @@
     "@tanstack/solid-query": {
       "optional": true
     },
+    "@tanstack/svelte-query": {
+      "optional": true
+    },
     "@tanstack/vue-query": {
       "optional": true
     },
@@ -115,6 +134,9 @@
       "optional": true
     },
     "solid-js": {
+      "optional": true
+    },
+    "svelte": {
       "optional": true
     },
     "vue": {

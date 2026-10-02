@@ -1,5 +1,6 @@
 // vitest.config.mts
 
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import react from "@vitejs/plugin-react";
 import vue from "@vitejs/plugin-vue";
 import { playwright } from "@vitest/browser-playwright";
@@ -51,6 +52,19 @@ export default defineConfig({
           typecheck: {
             enabled: true,
             include: ["test/solid/**/*.test-d.ts"],
+          },
+        },
+      },
+      {
+        plugins: [svelte()],
+        resolve: { conditions: ["browser"] },
+        test: {
+          browser: browser(),
+          include: ["test/svelte/**/*.test.ts"],
+          name: "svelte",
+          typecheck: {
+            enabled: true,
+            include: ["test/svelte/**/*.test-d.ts"],
           },
         },
       },

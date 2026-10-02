@@ -4,6 +4,7 @@ export const input = {
   index: "./src/index.ts",
   react: "./src/react/index.ts",
   solid: "./src/solid/index.ts",
+  svelte: "./src/svelte/index.ts",
   vue: "./src/vue/index.ts",
 };
 
