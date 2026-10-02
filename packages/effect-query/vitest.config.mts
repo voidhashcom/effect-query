@@ -3,6 +3,7 @@
 import react from "@vitejs/plugin-react";
 import vue from "@vitejs/plugin-vue";
 import { playwright } from "@vitest/browser-playwright";
+import solid from "vite-plugin-solid";
 import { defineConfig } from "vitest/config";
 
 // Vitest mutates the browser instances, so every project needs its own copy.
@@ -38,6 +39,18 @@ export default defineConfig({
           typecheck: {
             enabled: true,
             include: ["test/vue/**/*.test-d.ts"],
+          },
+        },
+      },
+      {
+        plugins: [solid()],
+        test: {
+          browser: browser(),
+          include: ["test/solid/**/*.test.ts"],
+          name: "solid",
+          typecheck: {
+            enabled: true,
+            include: ["test/solid/**/*.test-d.ts"],
           },
         },
       },

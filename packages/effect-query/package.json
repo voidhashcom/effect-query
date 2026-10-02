@@ -30,6 +30,16 @@
         "default": "./dist/react.cjs"
       }
     },
+    "./solid": {
+      "import": {
+        "types": "./dist/solid.d.mts",
+        "default": "./dist/solid.mjs"
+      },
+      "require": {
+        "types": "./dist/solid.d.cts",
+        "default": "./dist/solid.cjs"
+      }
+    },
     "./vue": {
       "import": {
         "types": "./dist/vue.d.mts",
@@ -59,7 +69,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@solidjs/testing-library": "^0.8.10",
     "@tanstack/react-query": "5.104.0",
+    "@tanstack/solid-query": "5.104.0",
     "@tanstack/vue-query": "5.104.0",
     "@types/react": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
@@ -70,9 +82,11 @@
     "playwright": "^1.63.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "solid-js": "^1.9.15",
     "tsdown": "0.23.0",
     "typescript6": "npm:typescript@^6.0.3",
     "ultracite": "^7.12.2",
+    "vite-plugin-solid": "^2.11.14",
     "vitest": "^5.0.3",
     "vitest-browser-react": "^2.3.0",
     "vitest-browser-vue": "^3.1.0",
@@ -80,19 +94,27 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.104.0",
+    "@tanstack/solid-query": "^5.104.0",
     "@tanstack/vue-query": "^5.104.0",
     "effect": "^4.0.0",
     "react": ">=18.2.0",
+    "solid-js": "^1.6.0",
     "vue": ">=3.3.0"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-query": {
       "optional": true
     },
+    "@tanstack/solid-query": {
+      "optional": true
+    },
     "@tanstack/vue-query": {
       "optional": true
     },
     "react": {
+      "optional": true
+    },
+    "solid-js": {
       "optional": true
     },
     "vue": {
