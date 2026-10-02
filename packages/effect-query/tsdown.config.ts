@@ -1,6 +1,9 @@
 import { defineConfig } from "tsdown";
 
-export const input = ["./src/index.ts"];
+export const input = {
+  index: "./src/index.ts",
+  react: "./src/react/index.ts",
+};
 
 export default defineConfig({
   dts: {

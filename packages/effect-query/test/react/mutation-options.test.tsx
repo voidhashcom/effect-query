@@ -2,8 +2,12 @@ import { mutationOptions, useMutation } from "@tanstack/react-query";
 import { Cause, Data, Effect, Layer } from "effect";
 import { describe, expect, test, vi } from "vitest";
 import { renderHook } from "vitest-browser-react";
-import { createEffectQuery } from "../src";
-import { EffectQueryDefect, EffectQueryFailure } from "../src/errors";
+import {
+  createEffectQuery,
+  EffectQueryDefect,
+  EffectQueryFailure,
+} from "../../src";
+
 import { HooksWrapper } from "./_helpers";
 
 describe("mutationOptions", () => {
