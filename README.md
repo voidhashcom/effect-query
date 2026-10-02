@@ -33,6 +33,7 @@ npm install @tanstack/react-query effect
 | React     | `effect-query` (or `effect-query/react`)  | `@tanstack/react-query` |
 | Vue       | `effect-query/vue`                        | `@tanstack/vue-query`   |
 | Solid     | `effect-query/solid`                      | `@tanstack/solid-query` |
+| Svelte    | `effect-query/svelte`                     | `@tanstack/svelte-query` (v6, Svelte 5 runes) |
 
 Every adapter exposes the same `createEffectQuery` / `createEffectQueryFromManagedRuntime` API and returns plain TanStack Query options. The success type of your Effect becomes `data`, and its failure channel becomes the `error` type (`EffectQueryFailure<E> | EffectQueryDefect<unknown>`), so both are inferred end to end in `useQuery`, `useSuspenseQuery`, `useInfiniteQuery`, `useMutation`, `useQueries` and on the `QueryClient` (`getQueryData`, `fetchQuery`, ...).
 
@@ -116,6 +117,45 @@ function Greeting() {
 As with solid-query, options are passed through an accessor (`useQuery(() => eq.queryOptions(...))`). `data` stays correctly typed even when the options are created inline.
 
 See [`examples/solid-example`](./examples/solid-example) for queries, mutations, infinite queries and Effect RPC.
+
+## Svelte
+
+```svelte
+<script lang="ts">
+  import { createQuery } from "@tanstack/svelte-query";
+  import { Cause, Effect } from "effect";
+  import { createEffectQuery } from "effect-query/svelte";
+
+  const eq = createEffectQuery(GreetingApiLive);
+
+  let name = $state("world");
+
+  // query.data: string | undefined
+  // query.error: EffectQueryFailure<...> | EffectQueryDefect<unknown> | null
+  const query = createQuery(() =>
+    eq.queryOptions({
+      queryKey: ["greeting", name],
+      queryFn: () =>
+        Effect.gen(function* () {
+          const greetingApi = yield* GreetingApi;
+          const greeting = yield* greetingApi.loadGreeting();
+          return `${greeting} (${name})`;
+        }),
+    })
+  );
+
+  const errorMessage = $derived(
+    query.error?.match({ OrElse: (cause) => Cause.pretty(cause) })
+  );
+</script>
+
+<input bind:value={name} />
+{#if errorMessage}<p>{errorMessage}</p>{:else}<p>{query.data}</p>{/if}
+```
+
+`effect-query/svelte` targets `@tanstack/svelte-query` v6 (Svelte 5 runes), where options are passed through an accessor.
+
+See [`examples/svelte-example`](./examples/svelte-example) for queries, mutations, infinite queries and Effect RPC.
 
 # Initialize
 
