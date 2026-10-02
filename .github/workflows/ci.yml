@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Install Playwright Chromium
+        working-directory: packages/effect-query
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test
+        run: pnpm test
+
+      - name: Lint the published package
+        working-directory: packages/effect-query
+        run: |
+          pnpm dlx publint --strict
+          pnpm dlx @arethetypeswrong/cli --pack . --profile node16

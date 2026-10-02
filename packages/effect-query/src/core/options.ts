@@ -1,4 +1,4 @@
-import { Cause, type Effect, Exit, ManagedRuntime, Option } from "effect";
+import { Cause, Effect, Exit, type ManagedRuntime, Option } from "effect";
 import type { Layer } from "effect/Layer";
 import { EffectQueryDefect, EffectQueryFailure } from "./errors";
 import { EffectQueryRunner } from "./runner";
@@ -43,13 +43,12 @@ export const toEffectQueryError = <E>(
 ): EffectQueryFailure<never> | EffectQueryDefect<unknown> => {
   const failure = Cause.findErrorOption(cause);
   if (Option.isSome(failure)) {
-    return new EffectQueryFailure(
-      Cause.pretty(cause),
+    return EffectQueryFailure.fromCause(
       failure.value as never,
       cause as Cause.Cause<never>
-    );
+    ) as EffectQueryFailure<never>;
   }
-  return new EffectQueryDefect(Cause.pretty(cause), cause);
+  return EffectQueryDefect.fromCause(cause as Cause.Cause<unknown>);
 };
 
 const runToPromise = async <A, E, R>(
@@ -74,7 +73,8 @@ const wrapQueryFn = (runner: EffectQueryRunner, queryFn: unknown): unknown => {
   return (context: QueryFunctionContextLike) =>
     runToPromise(
       runner,
-      effectFn(context as never),
+      // A function that throws instead of returning an Effect surfaces as an `EffectQueryDefect`.
+      Effect.suspend(() => effectFn(context as never)),
       spanNameFromKey(context.queryKey, DEFAULT_QUERY_SPAN),
       context.signal
     );
@@ -91,9 +91,55 @@ const wrapMutationFn = (
   return (variables: unknown, context?: MutationFunctionContextLike) =>
     runToPromise(
       runner,
-      effectFn(variables as never, context as never),
+      Effect.suspend(() => effectFn(variables as never, context as never)),
       spanNameFromKey(context?.mutationKey, DEFAULT_MUTATION_SPAN)
     );
+};
+
+/** Keeps the wrapped function stable while the getter keeps returning the same function. */
+const memoizeLast = (
+  wrap: (fn: unknown) => unknown,
+  read: () => unknown
+): (() => unknown) => {
+  let last: { readonly input: unknown; readonly output: unknown } | undefined;
+  return () => {
+    const input = read();
+    if (last === undefined || last.input !== input) {
+      last = { input, output: wrap(input) };
+    }
+    return last.output;
+  };
+};
+
+/**
+ * Copies `options`, replacing `key` with `wrap(options[key])`.
+ *
+ * Property descriptors are copied rather than spread, so getters (e.g. Solid's
+ * `get enabled() { return id() !== undefined }`) stay live instead of being read once. A getter
+ * for `key` itself stays a getter, wrapped on every access.
+ */
+const withWrapped = <T extends object>(
+  options: T,
+  key: "mutationFn" | "queryFn",
+  wrap: (fn: unknown) => unknown
+): T => {
+  const descriptors: PropertyDescriptorMap =
+    Object.getOwnPropertyDescriptors(options);
+  const descriptor = descriptors[key];
+  const wrapped: PropertyDescriptor = descriptor?.get
+    ? {
+        configurable: true,
+        enumerable: true,
+        get: memoizeLast(wrap, descriptor.get.bind(options)),
+      }
+    : {
+        configurable: true,
+        enumerable: true,
+        value: wrap((options as Record<string, unknown>)[key]),
+        writable: true,
+      };
+  descriptors[key] = wrapped;
+  return Object.defineProperties({}, descriptors) as T;
 };
 
 /**
@@ -107,27 +153,44 @@ export interface EffectQueryOptionFactories {
   readonly queryOptions: <T extends QueryOptionsLike>(options: T) => T;
 }
 
+/** The runtime handle every adapter's `createEffectQuery` result exposes. */
+export interface EffectQueryRuntimeHandle<Input> {
+  /**
+   * Disposes the underlying `ManagedRuntime`, running the finalizers of the scoped services of
+   * the layer. Call it when the factories are no longer used, e.g. on HMR or at the end of a
+   * server request. Queries started afterwards die with an `EffectQueryDefect`.
+   */
+  readonly dispose: () => Promise<void>;
+  /**
+   * The `ManagedRuntime` the Effects run on, e.g. to run an Effect outside of a query with
+   * `runtime.runPromise`. For `createEffectQuery` this is replaced when building the layer dies.
+   */
+  readonly runtime: ManagedRuntime.ManagedRuntime<Input, never>;
+}
+
 export const makeOptionFactories = (
   runner: EffectQueryRunner
-): EffectQueryOptionFactories => {
-  const queryOptions = <T extends QueryOptionsLike>(options: T): T => ({
-    ...options,
-    queryFn: wrapQueryFn(runner, options.queryFn),
-  });
+): EffectQueryOptionFactories & EffectQueryRuntimeHandle<never> => {
+  const queryOptions = <T extends QueryOptionsLike>(options: T): T =>
+    withWrapped(options, "queryFn", (queryFn) => wrapQueryFn(runner, queryFn));
 
   return {
+    dispose: () => runner.dispose(),
     infiniteQueryOptions: queryOptions,
-    mutationOptions: (options) => ({
-      ...options,
-      mutationFn: wrapMutationFn(runner, options.mutationFn),
-    }),
+    mutationOptions: (options) =>
+      withWrapped(options, "mutationFn", (mutationFn) =>
+        wrapMutationFn(runner, mutationFn)
+      ),
     queryOptions,
+    get runtime() {
+      return runner.runtime;
+    },
   };
 };
 
 export const runnerFromLayer = <Input>(
   layer: Layer<Input, never, never>
-): EffectQueryRunner => new EffectQueryRunner(ManagedRuntime.make(layer));
+): EffectQueryRunner => EffectQueryRunner.fromLayer(layer);
 
 export const runnerFromManagedRuntime = <Input>(
   runtime: ManagedRuntime.ManagedRuntime<Input, never>

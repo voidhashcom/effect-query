@@ -16,13 +16,15 @@ import {
   type SetupContext,
   type SlotsType,
   shallowRef,
+  unref,
   type VNodeChild,
   watch,
 } from "vue";
 import {
   isErrorOfQueries,
   type QueryKeyOwner,
-  toQueryKeys,
+  toQueryHash,
+  toQueryKeyOwners,
 } from "../core/query-error";
 
 /** Anything carrying a `queryKey`, e.g. the options returned by `eq.queryOptions`. */
@@ -73,12 +75,21 @@ const unwrapQueryKey = (value: unknown): unknown => {
   return value;
 };
 
+/** The guarded queries with their keys resolved, see {@link unwrapQueryKey}. */
+const resolveQueryOwners = (
+  query: QueryErrorSource
+): readonly QueryKeyOwner[] =>
+  toQueryKeyOwners(query as QueryKeyOwner | readonly QueryKeyOwner[]).map(
+    (options) => ({
+      queryKey: unwrapQueryKey(options.queryKey) as readonly unknown[],
+      queryKeyHashFn: unref(options.queryKeyHashFn),
+    })
+  );
+
 const resolveQueryKeys = (
   query: QueryErrorSource
 ): readonly (readonly unknown[])[] =>
-  toQueryKeys(query as QueryKeyOwner | readonly QueryKeyOwner[]).map(
-    (queryKey) => unwrapQueryKey(queryKey) as readonly unknown[]
-  );
+  resolveQueryOwners(query).map((options) => options.queryKey);
 
 /**
  * Narrows `error` to the error type of `query` when it is the error currently stored on that query
@@ -135,7 +146,10 @@ export const QueryErrorBoundary = defineComponent(
     }: SetupContext<EmitsOptions, SlotsType<QueryErrorBoundarySlots<TQuery>>>
   ) => {
     const queryClient = useQueryClient();
-    const queryKeys = computed(() => resolveQueryKeys(props.query));
+    const owners = computed(() => resolveQueryOwners(props.query));
+    const queryKeys = computed(() =>
+      owners.value.map((options) => options.queryKey)
+    );
     const caught = shallowRef<{ readonly error: unknown } | null>(null);
 
     const reset = (): void => {
@@ -143,7 +157,7 @@ export const QueryErrorBoundary = defineComponent(
     };
 
     // Moving to a different query (e.g. navigating from one id to another) starts over.
-    watch(() => hashKey(queryKeys.value), reset);
+    watch(() => toQueryHash(owners.value, hashKey), reset);
 
     onErrorCaptured((error) => {
       if (!isErrorOfQueries(queryClient, queryKeys.value, error)) {

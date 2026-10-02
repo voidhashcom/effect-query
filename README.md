@@ -187,6 +187,23 @@ const runtime = ManagedRuntime.make(GreetingApiLive);
 export const eqFromRuntime = createEffectQueryFromManagedRuntime(runtime);
 ```
 
+## Runtime lifecycle
+
+`createEffectQuery(layer)` builds the layer lazily, once, on the first query and shares it between every query and mutation. Each factory also exposes the runtime:
+
+```ts
+// Run an Effect outside of a query, e.g. in a router loader.
+await eq.runtime.runPromise(effect);
+
+// Run the finalizers of the scoped services of the layer (sockets, RPC clients, fibers...).
+await eq.dispose();
+```
+
+- **Dispose when you are done with it.** Call `dispose()` when the factories are no longer used. Typical cases are an HMR update (`import.meta.hot?.dispose(() => eq.dispose())`) or the end of a server request when the factories are created per request. Queries that start after `dispose()` fail with an `EffectQueryDefect`.
+- **A failed layer build is retried.** If building the layer dies (e.g. a transient network error while acquiring a resource), the failed runtime is discarded. The next query builds the layer again, so TanStack Query's retries can recover.
+- **A runtime you pass in is never replaced.** `createEffectQueryFromManagedRuntime` keeps the runtime you passed in as it is, and `dispose()` disposes it.
+- **Create the factories per request on the server.** A factory created at module level shares one runtime between every request.
+
 # Query Example
 
 ```tsx
@@ -303,6 +320,26 @@ if (error instanceof EffectQueryFailure) {
 }
 ```
 
+| | `EffectQueryFailure` | `EffectQueryDefect` |
+| --- | --- | --- |
+| When | The Effect failed with a typed failure | The Effect died, or was interrupted |
+| `name` / `_tag` | `"EffectQueryFailure"` | `"EffectQueryDefect"` |
+| `message` | Short summary (the failure's `message` or `_tag`), safe to show in a UI | Short summary of the defect |
+| `cause` (standard `Error` property) | The failure | The defect |
+| Payload | `failure`: the first failure, `failureCause`: the full `Cause` | `defect`: the value passed to `Effect.die` or the exception thrown, `defectCause`: the full `Cause`, `interrupted`: `true` if the Effect was interrupted rather than dying |
+
+Use `Cause.pretty(error.failureCause)` or `Cause.pretty(error.defectCause)` for a full, multi-line report including stack traces. Only show it in development, never in a UI.
+
+If an Effect function throws instead of returning an Effect, the exception becomes an `EffectQueryDefect` too.
+
+These errors are class instances and do not survive serialization (`structuredClone`, `JSON`, or SSR payloads): after a round trip, `match`, `failure` and `instanceof` are gone. TanStack Query does not dehydrate failed queries by default, so this only matters if you opt into it with `shouldDehydrateQuery`. In that case, map errors to plain data before they cross the boundary.
+
+## Cancellation and logging
+
+- **Cancelling interrupts the Effect.** Every query runs its Effect with TanStack Query's `AbortSignal`, so when a query is cancelled the Effect is interrupted and its finalizers run. A query is cancelled by `queryClient.cancelQueries`, or when its last observer unmounts while it is still fetching. When the last observer unmounts mid-fetch, the query goes back to its previous state rather than finishing in the background.
+- **Only defects are logged.** Defects are logged at the `Error` level through the logger of your runtime, so provide a `Logger` layer to route or silence them. Typed failures are expected and reach you through TanStack Query, so they are not logged. Interruptions are not logged either.
+- **Spans are named after the key.** Each query and mutation runs in a span named after the first element of its `queryKey` / `mutationKey`.
+
 ## Mutation Error Handling
 
 The same pattern works for mutations, allowing you to handle errors in callbacks:
@@ -352,7 +389,8 @@ function UserPage({ id }: { id: string }) {
 
 - Only errors produced by the given queries are handled. Anything else is rethrown to the next error boundary up the tree, so the `fallback` type is always accurate.
 - `reset` refetches the failed queries (it uses TanStack Query's `QueryErrorResetBoundary`).
-- The boundary resets on its own when the `queryKey` of `query` changes, e.g. when navigating between ids.
+- The boundary resets on its own when the `queryKey` of `query` changes, e.g. when navigating between ids. Each query is hashed with its own `queryKeyHashFn`, so keys that need a custom hash (e.g. containing a `BigInt`) work.
+- With Solid SSR, a boundary that rendered its fallback on the server keeps it while hydrating. Its `fallback` then receives the typed error from the client's cache if there is one, otherwise an `EffectQueryDefect` wrapping the deserialized server error (`error.defect`).
 
 `QueryErrorBoundary` is also exported from `effect-query/solid` (wraps Solid's `ErrorBoundary`, set `throwOnError: true` on the queries) and `effect-query/vue` (uses `onErrorCaptured`; the error is passed to the `#fallback="{ error, reset }"` slot; set `throwOnError: true` so `await query.suspense()` rejects).
 

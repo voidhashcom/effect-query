@@ -59,6 +59,24 @@ const withRoot = <TResult>(
 describe("solid runtime", () => {
   const eq = createEffectQuery(GreeterLive);
 
+  test("getters of options created once stay reactive", async () => {
+    const [name, setName] = createSignal<string | undefined>(undefined);
+    const options = eq.queryOptions({
+      get enabled() {
+        return name() !== undefined;
+      },
+      queryFn: () => greet(name() ?? ""),
+      get queryKey() {
+        return ["greet-getter", name()] as const;
+      },
+    });
+    const { result } = withRoot((client) => useQuery(() => options, client));
+
+    expect(result.fetchStatus).toBe("idle");
+    setName("Lambert");
+    await vi.waitFor(() => expect(result.data).toBe("Hello, Lambert!"));
+  });
+
   test("provides the layer to the query", async () => {
     const { result } = withRoot((client) =>
       useQuery(

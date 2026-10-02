@@ -299,3 +299,47 @@ describe("isQueryError", () => {
     ).toBe(true);
   });
 });
+
+// TanStack Query's default hash cannot serialize a `BigInt`, such keys need a `queryKeyHashFn`.
+const bigintHash = (key: readonly unknown[]) =>
+  JSON.stringify(key, (_, value: unknown) =>
+    typeof value === "bigint" ? `${value}n` : value
+  );
+
+const bigUserOptions = eq.queryOptions({
+  queryFn: () => Effect.fail(new NotFound({ id: "big" })),
+  queryKey: ["vue-big-user", 1n],
+  queryKeyHashFn: bigintHash,
+});
+
+const BigUser = defineComponent({
+  async setup() {
+    const query = useQuery({ ...bigUserOptions, throwOnError: true });
+    await query.suspense();
+    return () => h("p", String(query.data.value));
+  },
+});
+
+describe("QueryErrorBoundary with a custom queryKeyHashFn", () => {
+  test("guards queries whose keys the default hash cannot serialize", async () => {
+    const screen = await mount({
+      render: () =>
+        h(
+          QueryErrorBoundary,
+          { query: bigUserOptions },
+          {
+            default: () => suspended(() => h(BigUser)),
+            fallback: ({ error }: { error: unknown }) =>
+              h(
+                "p",
+                error instanceof EffectQueryFailure
+                  ? `big: ${error.failure.id}`
+                  : "other"
+              ),
+          }
+        ),
+    });
+
+    await expect.element(screen.getByText("big: big")).toBeInTheDocument();
+  });
+});

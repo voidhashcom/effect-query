@@ -8,7 +8,13 @@ import {
   useQueryErrorResetBoundary,
 } from "@tanstack/react-query";
 import { Component, createElement, type ReactNode } from "react";
-import { isErrorOfQueries, toQueryKeys } from "../core/query-error";
+import {
+  isErrorOfQueries,
+  type QueryKeyOwner,
+  toQueryHash,
+  toQueryKeyOwners,
+  toQueryKeys,
+} from "../core/query-error";
 
 /** Anything carrying a `queryKey`, e.g. the options returned by `eq.queryOptions`. */
 export interface QueryOptionsWithKey {
@@ -104,23 +110,36 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
     return { caught: null, resetKey: props.resetKey };
   }
 
+  // Whether a caught error belongs to the guarded queries is decided once, on the first render
+  // after catching it, while the error is still stored on the query. Afterwards the query may be
+  // garbage collected, refetched or reset while the fallback is shown, which must not turn the
+  // error into someone else's.
+  private readonly owned = new WeakMap<object, boolean>();
+
   readonly reset = (): void => {
     this.props.resetErrorBoundary();
     this.setState({ caught: null });
   };
+
+  private isOwned(caught: { readonly error: unknown }): boolean {
+    let owned = this.owned.get(caught);
+    if (owned === undefined) {
+      owned = isErrorOfQueries(
+        this.props.queryClient,
+        this.props.queryKeys,
+        caught.error
+      );
+      this.owned.set(caught, owned);
+    }
+    return owned;
+  }
 
   override render(): ReactNode {
     const { caught } = this.state;
     if (caught === null) {
       return this.props.children;
     }
-    if (
-      !isErrorOfQueries(
-        this.props.queryClient,
-        this.props.queryKeys,
-        caught.error
-      )
-    ) {
+    if (!this.isOwned(caught)) {
       // Not ours: rethrowing from render hands the error to the next boundary up the tree.
       throw caught.error;
     }
@@ -153,7 +172,10 @@ export function QueryErrorBoundary<const TQuery extends QueryErrorSource>(
 ): ReactNode {
   const queryClient = useQueryClient();
   const { reset } = useQueryErrorResetBoundary();
-  const queryKeys = toQueryKeys(props.query);
+  const owners = toQueryKeyOwners(
+    props.query as QueryKeyOwner | readonly QueryKeyOwner[]
+  );
+  const queryKeys = owners.map((options) => options.queryKey);
 
   return createElement(
     Boundary,
@@ -162,7 +184,7 @@ export function QueryErrorBoundary<const TQuery extends QueryErrorSource>(
       queryClient,
       queryKeys,
       resetErrorBoundary: reset,
-      resetKey: hashKey(queryKeys),
+      resetKey: toQueryHash(owners, hashKey),
     },
     props.children
   );

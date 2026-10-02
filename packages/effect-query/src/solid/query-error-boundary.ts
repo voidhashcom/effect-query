@@ -6,15 +6,26 @@ import {
   type QueryKey,
   useQueryClient,
 } from "@tanstack/solid-query";
+import { Cause } from "effect";
 import {
+  catchError,
   createComponent,
   createEffect,
   createMemo,
   ErrorBoundary,
   type JSX,
   on,
+  sharedConfig,
 } from "solid-js";
-import { isErrorOfQueries, toQueryKeys } from "../core/query-error";
+import { EffectQueryDefect } from "../core/errors";
+import {
+  findErrorOfQueries,
+  isErrorOfQueries,
+  type QueryKeyOwner,
+  toQueryHash,
+  toQueryKeyOwners,
+  toQueryKeys,
+} from "../core/query-error";
 
 /** Anything carrying a `queryKey`, e.g. the options returned by `eq.queryOptions`. */
 export interface QueryOptionsWithKey {
@@ -71,6 +82,18 @@ export interface QueryErrorBoundaryProps<TQuery extends QueryErrorSource> {
 }
 
 /**
+ * A deserialized error has lost its class, so `error.match` would not exist. Prefer the typed
+ * error the client's query holds, otherwise expose the server error as a defect.
+ */
+const reviveHydratedError = (
+  queryClient: QueryClient,
+  queryKeys: readonly (readonly unknown[])[],
+  error: unknown
+): unknown =>
+  findErrorOfQueries(queryClient, queryKeys) ??
+  EffectQueryDefect.fromCause(Cause.die(error));
+
+/**
  * An `ErrorBoundary` bound to the query options it guards, so `fallback` receives the typed
  * `EffectQueryFailure<E> | EffectQueryDefect<unknown>` of that query.
  *
@@ -93,13 +116,21 @@ export function QueryErrorBoundary<const TQuery extends QueryErrorSource>(
   props: QueryErrorBoundaryProps<TQuery>
 ): JSX.Element {
   const queryClient = useQueryClient();
-  const queryKeys = createMemo(() => toQueryKeys(props.query));
+  const owners = createMemo(() =>
+    toQueryKeyOwners(props.query as QueryKeyOwner | readonly QueryKeyOwner[])
+  );
+  const queryKeys = createMemo(() =>
+    owners().map((options) => options.queryKey)
+  );
   let resetCaught: (() => void) | undefined;
+  // Every error raised on the client reaches the boundary through its children. While hydrating,
+  // `ErrorBoundary` can also start out with the error the boundary caught on the server.
+  const fromChildren = new Set<unknown>();
 
   // Moving to a different query (e.g. navigating from one id to another) starts over.
   createEffect(
     on(
-      () => hashKey(queryKeys()),
+      () => toQueryHash(owners(), hashKey),
       () => resetCaught?.(),
       { defer: true }
     )
@@ -107,19 +138,34 @@ export function QueryErrorBoundary<const TQuery extends QueryErrorSource>(
 
   return createComponent(ErrorBoundary, {
     get children() {
-      return props.children;
+      return catchError(
+        () => props.children,
+        (error: unknown) => {
+          fromChildren.add(error);
+          throw error;
+        }
+      );
     },
     fallback: (error: unknown, reset: () => void) => {
-      if (!isErrorOfQueries(queryClient, queryKeys(), error)) {
+      const owned = isErrorOfQueries(queryClient, queryKeys(), error);
+      // An error that did not come from the children is the one this boundary caught on the server,
+      // deserialized while hydrating. It is never the error stored on the client's query, but the
+      // server already rethrew the errors it did not own, so it is ours.
+      const hydrated =
+        !owned && Boolean(sharedConfig.context) && !fromChildren.has(error);
+      if (!(owned || hydrated)) {
         // Not ours: the fallback runs outside of this boundary, so the error reaches the next one.
         throw error;
       }
       resetCaught = () => {
         resetCaught = undefined;
+        fromChildren.clear();
         reset();
       };
       return props.fallback({
-        error: error as InferQueryOptionsError<TQuery>,
+        error: (hydrated
+          ? reviveHydratedError(queryClient, queryKeys(), error)
+          : error) as InferQueryOptionsError<TQuery>,
         reset: resetCaught,
       });
     },

@@ -34,3 +34,13 @@ export function afterQueryFinish(
     { timeout: 1000 }
   );
 }
+
+/** A wrapper around a fresh `QueryClient`, so tests never read each other's cache entries. */
+export function createWrapper(
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+) {
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+  return { queryClient: client, wrapper: Wrapper };
+}
