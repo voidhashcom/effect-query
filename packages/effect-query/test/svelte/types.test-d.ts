@@ -13,6 +13,7 @@ import {
   createEffectQuery,
   type EffectQueryDefect,
   type EffectQueryFailure,
+  isQueryError,
 } from "../../src/svelte";
 
 class NotFound extends Data.TaggedError("NotFound")<{ id: string }> {}
@@ -296,5 +297,14 @@ describe("mutationOptions", () => {
     expectTypeOf(
       mutation.error
     ).toEqualTypeOf<EffectQueryDefect<unknown> | null>();
+  });
+});
+
+describe("isQueryError", () => {
+  test("narrows to the query error", () => {
+    const error: unknown = null;
+    if (isQueryError(queryClient, userOptions("1"), error)) {
+      expectTypeOf(error).toEqualTypeOf<UserError>();
+    }
   });
 });

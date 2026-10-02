@@ -24,4 +24,5 @@ export function createEffectQueryFromManagedRuntime<Input>(
 
 // biome-ignore lint/performance/noBarrelFile: package entry point
 export { EffectQueryDefect, EffectQueryFailure } from "../core/errors";
+export { isQueryError, QueryErrorBoundary } from "./query-error-boundary";
 export type * from "./types";
