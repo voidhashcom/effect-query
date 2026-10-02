@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  # Required for npm trusted publishing (OIDC)
+  id-token: write
 
 jobs:
   release:
@@ -16,22 +18,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-
-      - run: npx changelogithub
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
       - uses: pnpm/action-setup@v4
 
+      # Node 24 ships npm 11, which is required for trusted publishing
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version: 24.x
           registry-url: "https://registry.npmjs.org"
 
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build
@@ -58,7 +53,12 @@ jobs:
           echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
           echo "Using npm tag: $NPM_TAG"
 
+      # Authenticates via OIDC trusted publishing, no NPM_TOKEN needed
       - name: Publish to npm
-        run: pnpm -r publish --access public --no-git-checks --tag ${{ steps.determine_npm_tag.outputs.npm_tag }}
+        working-directory: packages/effect-query
+        run: npm publish --access public --tag ${{ steps.determine_npm_tag.outputs.npm_tag }}
+
+      # Only create the GitHub release once the package is actually on npm
+      - run: npx changelogithub
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
