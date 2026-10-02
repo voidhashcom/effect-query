@@ -30,6 +30,16 @@
         "default": "./dist/react.cjs"
       }
     },
+    "./vue": {
+      "import": {
+        "types": "./dist/vue.d.mts",
+        "default": "./dist/vue.mjs"
+      },
+      "require": {
+        "types": "./dist/vue.d.cts",
+        "default": "./dist/vue.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -43,15 +53,17 @@
     "build": "tsdown",
     "lint": "biome check .",
     "test": "vitest --run",
-    "typecheck": "tsc --noEmit --pretty && pnpm typecheck:ts6",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit --pretty && pnpm typecheck:ts6",
     "typecheck:ts6": "node ./node_modules/typescript6/bin/tsc --noEmit --pretty"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "@tanstack/react-query": "5.104.0",
+    "@tanstack/vue-query": "5.104.0",
     "@types/react": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-vue": "^6.0.9",
     "@vitest/browser-playwright": "^5.0.3",
     "@vitest/browser-preview": "^5.0.3",
     "effect": "4.0.0",
@@ -62,18 +74,28 @@
     "typescript6": "npm:typescript@^6.0.3",
     "ultracite": "^7.12.2",
     "vitest": "^5.0.3",
-    "vitest-browser-react": "^2.3.0"
+    "vitest-browser-react": "^2.3.0",
+    "vitest-browser-vue": "^3.1.0",
+    "vue": "^3.5.43"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.104.0",
+    "@tanstack/vue-query": "^5.104.0",
     "effect": "^4.0.0",
-    "react": ">=18.2.0"
+    "react": ">=18.2.0",
+    "vue": ">=3.3.0"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-query": {
       "optional": true
     },
+    "@tanstack/vue-query": {
+      "optional": true
+    },
     "react": {
+      "optional": true
+    },
+    "vue": {
       "optional": true
     }
   }

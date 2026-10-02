@@ -31,8 +31,51 @@ npm install @tanstack/react-query effect
 | Framework | Entry point                               | TanStack Query package  |
 | --------- | ----------------------------------------- | ----------------------- |
 | React     | `effect-query` (or `effect-query/react`)  | `@tanstack/react-query` |
+| Vue       | `effect-query/vue`                        | `@tanstack/vue-query`   |
 
 Every adapter exposes the same `createEffectQuery` / `createEffectQueryFromManagedRuntime` API and returns plain TanStack Query options. The success type of your Effect becomes `data`, and its failure channel becomes the `error` type (`EffectQueryFailure<E> | EffectQueryDefect<unknown>`), so both are inferred end to end in `useQuery`, `useSuspenseQuery`, `useInfiniteQuery`, `useMutation`, `useQueries` and on the `QueryClient` (`getQueryData`, `fetchQuery`, ...).
+
+## Vue
+
+```ts
+// src/effect-query.ts
+import { createEffectQuery } from "effect-query/vue";
+export const eq = createEffectQuery(GreetingApiLive);
+```
+
+```vue
+<script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
+import { Cause, Effect } from "effect";
+import { computed, ref } from "vue";
+import { eq, GreetingApi } from "./effect-query";
+
+const name = ref("world");
+
+// Pass a getter so the options are recomputed when `name` changes.
+// data: Ref<string | undefined>, error: Ref<EffectQueryFailure<...> | EffectQueryDefect<unknown> | null>
+const { data, error } = useQuery(() =>
+  eq.queryOptions({
+    queryKey: ["greeting", name.value],
+    queryFn: () =>
+      Effect.gen(function* () {
+        const greetingApi = yield* GreetingApi;
+        const greeting = yield* greetingApi.loadGreeting();
+        return `${greeting} (${name.value})`;
+      }),
+  })
+);
+
+// Add a handler per failure tag of your Effect, `OrElse` handles the rest.
+const errorMessage = computed(() =>
+  error.value?.match({ OrElse: (cause) => Cause.pretty(cause) })
+);
+</script>
+```
+
+> Like vue-query's own `queryOptions`, refs can be used inside `queryKey`, `enabled`, `staleTime`, etc. and are unwrapped in the `queryFn` context. However, TypeScript < 7 cannot infer `useQuery(options)` when the `queryKey` *returned by `queryOptions`* contains a ref, so prefer the getter form shown above.
+
+See [`examples/vue-example`](./examples/vue-example) for queries, mutations, infinite queries and Effect RPC.
 
 # Initialize
 

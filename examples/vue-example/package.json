@@ -1,0 +1,23 @@
+{
+  "name": "@effect-query/vue-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/vue-query": "5.104.0",
+    "effect": "4.0.0",
+    "effect-query": "workspace:*",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.1",
+    "vue-tsc": "^3.3.12"
+  }
+}
