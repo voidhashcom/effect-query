@@ -221,23 +221,19 @@ describe("queryOptions", () => {
     class Missing extends Context.Service<Missing, { value: number }>()(
       "test/Missing"
     ) {}
-    eq.queryOptions({
-      // @ts-expect-error Missing is not provided by the layer
-      queryFn: () =>
-        Effect.gen(function* () {
-          const missing = yield* Missing;
-          return missing.value;
-        }),
-      queryKey: ["missing"],
-    });
+    const readMissing = () =>
+      Effect.gen(function* () {
+        const missing = yield* Missing;
+        return missing.value;
+      });
+    // @ts-expect-error Missing is not provided by the layer
+    eq.queryOptions({ queryFn: readMissing, queryKey: ["missing"] });
   });
 
   test("rejects untagged failures", () => {
-    eq.queryOptions({
-      // @ts-expect-error failures must be tagged
-      queryFn: () => Effect.fail("boom"),
-      queryKey: ["untagged"],
-    });
+    const failUntagged = () => Effect.fail("boom");
+    // @ts-expect-error failures must be tagged
+    eq.queryOptions({ queryFn: failUntagged, queryKey: ["untagged"] });
   });
 
   test("works with an empty layer", () => {

@@ -43,8 +43,9 @@
     "build": "tsdown",
     "lint": "biome check .",
     "test": "vitest --run",
-    "typecheck": "tsc --noEmit --pretty",
-    "test:watch": "vitest"
+    "typecheck": "tsc --noEmit --pretty && pnpm typecheck:ts6",
+    "test:watch": "vitest",
+    "typecheck:ts6": "node ./node_modules/typescript6/bin/tsc --noEmit --pretty"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
@@ -58,6 +59,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tsdown": "0.23.0",
+    "typescript6": "npm:typescript@^6.0.3",
     "ultracite": "^7.12.2",
     "vitest": "^5.0.3",
     "vitest-browser-react": "^2.3.0"
