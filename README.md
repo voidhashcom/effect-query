@@ -32,6 +32,7 @@ npm install @tanstack/react-query effect
 | --------- | ----------------------------------------- | ----------------------- |
 | React     | `effect-query` (or `effect-query/react`)  | `@tanstack/react-query` |
 | Vue       | `effect-query/vue`                        | `@tanstack/vue-query`   |
+| Solid     | `effect-query/solid`                      | `@tanstack/solid-query` |
 
 Every adapter exposes the same `createEffectQuery` / `createEffectQueryFromManagedRuntime` API and returns plain TanStack Query options. The success type of your Effect becomes `data`, and its failure channel becomes the `error` type (`EffectQueryFailure<E> | EffectQueryDefect<unknown>`), so both are inferred end to end in `useQuery`, `useSuspenseQuery`, `useInfiniteQuery`, `useMutation`, `useQueries` and on the `QueryClient` (`getQueryData`, `fetchQuery`, ...).
 
@@ -76,6 +77,45 @@ const errorMessage = computed(() =>
 > Like vue-query's own `queryOptions`, refs can be used inside `queryKey`, `enabled`, `staleTime`, etc. and are unwrapped in the `queryFn` context. However, TypeScript < 7 cannot infer `useQuery(options)` when the `queryKey` *returned by `queryOptions`* contains a ref, so prefer the getter form shown above.
 
 See [`examples/vue-example`](./examples/vue-example) for queries, mutations, infinite queries and Effect RPC.
+
+## Solid
+
+```tsx
+import { useQuery } from "@tanstack/solid-query";
+import { Cause, Effect } from "effect";
+import { createEffectQuery } from "effect-query/solid";
+import { createSignal, Show } from "solid-js";
+
+const eq = createEffectQuery(GreetingApiLive);
+
+function Greeting() {
+  const [name, setName] = createSignal("world");
+
+  // query.data: string | undefined
+  // query.error: EffectQueryFailure<...> | EffectQueryDefect<unknown> | null
+  const query = useQuery(() =>
+    eq.queryOptions({
+      queryKey: ["greeting", name()],
+      queryFn: () =>
+        Effect.gen(function* () {
+          const greetingApi = yield* GreetingApi;
+          const greeting = yield* greetingApi.loadGreeting();
+          return `${greeting} (${name()})`;
+        }),
+    })
+  );
+
+  return (
+    <Show when={query.error} fallback={<p>{query.data}</p>}>
+      {(error) => <p>{error().match({ OrElse: (cause) => Cause.pretty(cause) })}</p>}
+    </Show>
+  );
+}
+```
+
+As with solid-query, options are passed through an accessor (`useQuery(() => eq.queryOptions(...))`). `data` stays correctly typed even when the options are created inline.
+
+See [`examples/solid-example`](./examples/solid-example) for queries, mutations, infinite queries and Effect RPC.
 
 # Initialize
 
