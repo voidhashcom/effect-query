@@ -4,7 +4,8 @@
   "description": "Effect adapter for Tanstack Query",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voidhashcom/effect-query.git"
+    "url": "git+https://github.com/voidhashcom/effect-query.git",
+    "directory": "packages/effect-query"
   },
   "license": "MIT",
   "author": "Dominik Vít <dominik@voidhash.com>",
