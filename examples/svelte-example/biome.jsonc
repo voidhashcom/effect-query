@@ -1,0 +1,9 @@
+{
+  "$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+  "root": false,
+  "extends": "//",
+  "files": {
+    // Biome cannot see template usage in Svelte components; they are checked by svelte-check.
+    "includes": ["**", "!**/*.svelte"]
+  }
+}

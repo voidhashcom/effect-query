@@ -1,3 +1,8 @@
 packages:
   - packages/*
   - examples/*
+allowBuilds:
+  vue-demi: true
+minimumReleaseAgeExclude:
+  - '@vue/language-core@3.3.12'
+  - vue-tsc@3.3.12

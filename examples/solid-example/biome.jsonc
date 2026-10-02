@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+  "root": false,
+  "extends": "//",
+  "linter": {
+    "rules": {
+      // Solid components run once, so inline handlers and render callbacks are idiomatic.
+      "correctness": { "noNestedComponentDefinitions": "off" },
+      "performance": { "noJsxPropsBind": "off" },
+      // Biome cannot see that solid-query data is undefined while pending.
+      "suspicious": { "noUnnecessaryConditions": "off" }
+    }
+  }
+}

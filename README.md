@@ -31,8 +31,131 @@ npm install @tanstack/react-query effect
 | Framework | Entry point                               | TanStack Query package  |
 | --------- | ----------------------------------------- | ----------------------- |
 | React     | `effect-query` (or `effect-query/react`)  | `@tanstack/react-query` |
+| Vue       | `effect-query/vue`                        | `@tanstack/vue-query`   |
+| Solid     | `effect-query/solid`                      | `@tanstack/solid-query` |
+| Svelte    | `effect-query/svelte`                     | `@tanstack/svelte-query` (v6, Svelte 5 runes) |
 
 Every adapter exposes the same `createEffectQuery` / `createEffectQueryFromManagedRuntime` API and returns plain TanStack Query options. The success type of your Effect becomes `data`, and its failure channel becomes the `error` type (`EffectQueryFailure<E> | EffectQueryDefect<unknown>`), so both are inferred end to end in `useQuery`, `useSuspenseQuery`, `useInfiniteQuery`, `useMutation`, `useQueries` and on the `QueryClient` (`getQueryData`, `fetchQuery`, ...).
+
+## Vue
+
+```ts
+// src/effect-query.ts
+import { createEffectQuery } from "effect-query/vue";
+export const eq = createEffectQuery(GreetingApiLive);
+```
+
+```vue
+<script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
+import { Cause, Effect } from "effect";
+import { computed, ref } from "vue";
+import { eq, GreetingApi } from "./effect-query";
+
+const name = ref("world");
+
+// Pass a getter so the options are recomputed when `name` changes.
+// data: Ref<string | undefined>, error: Ref<EffectQueryFailure<...> | EffectQueryDefect<unknown> | null>
+const { data, error } = useQuery(() =>
+  eq.queryOptions({
+    queryKey: ["greeting", name.value],
+    queryFn: () =>
+      Effect.gen(function* () {
+        const greetingApi = yield* GreetingApi;
+        const greeting = yield* greetingApi.loadGreeting();
+        return `${greeting} (${name.value})`;
+      }),
+  })
+);
+
+// Add a handler per failure tag of your Effect, `OrElse` handles the rest.
+const errorMessage = computed(() =>
+  error.value?.match({ OrElse: (cause) => Cause.pretty(cause) })
+);
+</script>
+```
+
+> Like vue-query's own `queryOptions`, refs can be used inside `queryKey`, `enabled`, `staleTime`, etc. and are unwrapped in the `queryFn` context. However, TypeScript < 7 cannot infer `useQuery(options)` when the `queryKey` *returned by `queryOptions`* contains a ref, so prefer the getter form shown above.
+
+See [`examples/vue-example`](./examples/vue-example) for queries, mutations, infinite queries and Effect RPC.
+
+## Solid
+
+```tsx
+import { useQuery } from "@tanstack/solid-query";
+import { Cause, Effect } from "effect";
+import { createEffectQuery } from "effect-query/solid";
+import { createSignal, Show } from "solid-js";
+
+const eq = createEffectQuery(GreetingApiLive);
+
+function Greeting() {
+  const [name, setName] = createSignal("world");
+
+  // query.data: string | undefined
+  // query.error: EffectQueryFailure<...> | EffectQueryDefect<unknown> | null
+  const query = useQuery(() =>
+    eq.queryOptions({
+      queryKey: ["greeting", name()],
+      queryFn: () =>
+        Effect.gen(function* () {
+          const greetingApi = yield* GreetingApi;
+          const greeting = yield* greetingApi.loadGreeting();
+          return `${greeting} (${name()})`;
+        }),
+    })
+  );
+
+  return (
+    <Show when={query.error} fallback={<p>{query.data}</p>}>
+      {(error) => <p>{error().match({ OrElse: (cause) => Cause.pretty(cause) })}</p>}
+    </Show>
+  );
+}
+```
+
+As with solid-query, options are passed through an accessor (`useQuery(() => eq.queryOptions(...))`). `data` stays correctly typed even when the options are created inline.
+
+See [`examples/solid-example`](./examples/solid-example) for queries, mutations, infinite queries and Effect RPC.
+
+## Svelte
+
+```svelte
+<script lang="ts">
+  import { createQuery } from "@tanstack/svelte-query";
+  import { Cause, Effect } from "effect";
+  import { createEffectQuery } from "effect-query/svelte";
+
+  const eq = createEffectQuery(GreetingApiLive);
+
+  let name = $state("world");
+
+  // query.data: string | undefined
+  // query.error: EffectQueryFailure<...> | EffectQueryDefect<unknown> | null
+  const query = createQuery(() =>
+    eq.queryOptions({
+      queryKey: ["greeting", name],
+      queryFn: () =>
+        Effect.gen(function* () {
+          const greetingApi = yield* GreetingApi;
+          const greeting = yield* greetingApi.loadGreeting();
+          return `${greeting} (${name})`;
+        }),
+    })
+  );
+
+  const errorMessage = $derived(
+    query.error?.match({ OrElse: (cause) => Cause.pretty(cause) })
+  );
+</script>
+
+<input bind:value={name} />
+{#if errorMessage}<p>{errorMessage}</p>{:else}<p>{query.data}</p>{/if}
+```
+
+`effect-query/svelte` targets `@tanstack/svelte-query` v6 (Svelte 5 runes), where options are passed through an accessor.
+
+See [`examples/svelte-example`](./examples/svelte-example) for queries, mutations, infinite queries and Effect RPC.
 
 # Initialize
 
