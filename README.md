@@ -186,8 +186,8 @@ export default function UpdateUserPage({ id }: { id: string }) {
 import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
 import { Context, Effect, Layer } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
-import { HttpApiClient } from "effect/unstable/httpapi";
+import { FetchHttpClient } from "effect/http";
+import { HttpApiClient } from "effect/http-api";
 import { HttpApiSpec } from "./http-api-spec";
 
 // Create your ApiClient service
@@ -231,8 +231,8 @@ export default function HomeRoute() {
 import { useQuery } from "@tanstack/react-query";
 import { createEffectQuery } from "effect-query";
 import { Context, Effect, Layer } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
-import { RpcClient, RpcSerialization } from "effect/unstable/rpc";
+import { FetchHttpClient } from "effect/http";
+import { RpcClient, RpcSerialization } from "effect/rpc";
 import { RpcGroups } from "./rpc-schema";
 
 const API_DOMAIN = "https://api.example.com";

@@ -1,7 +1,7 @@
 import { type Layer, ManagedRuntime } from "effect";
-import { createEffectInfiniteQueryOptions } from "./infiniteQueryOptions";
-import { createEffectMutationOptions } from "./mutationOptions";
-import { createEffectQueryQueryOptions } from "./queryOptions";
+import { createEffectInfiniteQueryOptions } from "./infinite-query-options";
+import { createEffectMutationOptions } from "./mutation-options";
+import { createEffectQueryQueryOptions } from "./query-options";
 import { EffectQueryRunner } from "./runner";
 import type { EffectQuery } from "./types";
 
@@ -18,9 +18,9 @@ export function createEffectQueryFromManagedRuntime<Input>(
   const runner = new EffectQueryRunner(runtime);
 
   return {
-    queryOptions: createEffectQueryQueryOptions(runner),
     infiniteQueryOptions: createEffectInfiniteQueryOptions(runner),
     mutationOptions: createEffectMutationOptions(runner),
+    queryOptions: createEffectQueryQueryOptions(runner),
   };
 }
 

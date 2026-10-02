@@ -42,8 +42,9 @@ export class EffectQueryFailure<
     >
   ): TReturn {
     if (
-      this.failure &&
       typeof this.failure === "object" &&
+      // biome-ignore lint/suspicious/noUnnecessaryConditions: runtime guard, failures are not guaranteed to match their static type
+      this.failure !== null &&
       "_tag" in this.failure
     ) {
       const tag = this.failure._tag;

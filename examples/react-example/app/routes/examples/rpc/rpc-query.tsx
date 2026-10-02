@@ -5,7 +5,6 @@ import { ExampleRpcClient, rpcEq } from "~/lib/effect-rpc-example";
 const greetingName = "Voyager";
 
 const greetingQueryOptions = rpcEq.queryOptions({
-  queryKey: ["rpc", "get-greeting", greetingName],
   queryFn: () =>
     Effect.gen(function* () {
       const rpcClient = yield* ExampleRpcClient;
@@ -13,6 +12,7 @@ const greetingQueryOptions = rpcEq.queryOptions({
         name: greetingName,
       });
     }),
+  queryKey: ["rpc", "get-greeting", greetingName],
 });
 
 export default function RpcQueryRoute() {

@@ -1,5 +1,5 @@
 import { Console, Context, Duration, Effect, Layer, Schema } from "effect";
-import { Rpc, type RpcClient, RpcGroup, RpcTest } from "effect/unstable/rpc";
+import { Rpc, type RpcClient, RpcGroup, RpcTest } from "effect/rpc";
 import { createEffectQuery } from "effect-query";
 
 const greetingDelay = Duration.millis(250);
@@ -20,12 +20,12 @@ const GetGreeting = Rpc.make("GetGreeting", {
 });
 
 const RenameUser = Rpc.make("RenameUser", {
+  error: RenameUserError,
   payload: {
     id: Schema.String,
     name: Schema.String,
   },
   success: Schema.String,
-  error: RenameUserError,
 });
 
 const ExampleRpcGroup = RpcGroup.make(GetGreeting, RenameUser);

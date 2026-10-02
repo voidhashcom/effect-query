@@ -13,6 +13,7 @@ import {
   ManagedRuntime,
 } from "effect";
 import { createEffectQueryFromManagedRuntime } from "effect-query";
+import { useCallback } from "react";
 
 class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
   message: string;
@@ -58,29 +59,23 @@ export default function UpdateUserPage() {
     ...updateUserOptions,
     onError: (error) =>
       error.match({
-        UserUpdateError: (userUpdateError) => {
-          alert(`${userUpdateError.message}`);
-        },
-
         OrElse: (cause) => {
           alert(`Error updating user: ${Cause.pretty(cause)}`);
+        },
+        UserUpdateError: (userUpdateError) => {
+          alert(`${userUpdateError.message}`);
         },
       }),
     onSuccess: () => {
       alert("User updated!");
     },
   });
+  const updateUser = useCallback(() => mutate({ id }), [mutate]);
+
   return (
     <div>
       <p>Uses a `ManagedRuntime` built from a v4 `Context.Service`.</p>
-      <button
-        onClick={() =>
-          mutate({
-            id,
-          })
-        }
-        type="button"
-      >
+      <button onClick={updateUser} type="button">
         Update User
       </button>
     </div>

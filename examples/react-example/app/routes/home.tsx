@@ -3,7 +3,7 @@ import { NavLink } from "react-router";
 export function meta() {
   return [
     { title: "Effect Query React Example" },
-    { name: "description", content: "Welcome to React Router!" },
+    { content: "Welcome to React Router!", name: "description" },
   ];
 }
 

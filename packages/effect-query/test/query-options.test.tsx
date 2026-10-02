@@ -19,14 +19,14 @@ describe("infiniteQueryOptions", () => {
   test("should work with defined initial data", async () => {
     const { eq } = testContext();
     const defaultOptions = queryOptions({
-      queryKey: ["test"],
       initialData: () => "test",
       queryFn: () => "test",
+      queryKey: ["test"],
     });
     const effectQueryOptions = eq.queryOptions({
-      queryKey: ["test"],
       initialData: () => "test",
       queryFn: () => Effect.succeed("test"),
+      queryKey: ["test"],
     });
     const { result: defaultResult } = await renderHook(
       () => useQuery(defaultOptions),
@@ -56,8 +56,8 @@ describe("infiniteQueryOptions", () => {
     const { eq } = testContext();
 
     const effectQueryOptions = eq.queryOptions({
-      queryKey: ["test"],
       queryFn: skipToken,
+      queryKey: ["test"],
     });
 
     expect(effectQueryOptions.enabled).toBe(false);
@@ -67,8 +67,8 @@ describe("infiniteQueryOptions", () => {
     const { eq } = testContext();
 
     const effectQueryOptions = eq.queryOptions({
-      queryKey: ["test"],
       queryFn: () => Effect.succeed("test"),
+      queryKey: ["test"],
     });
 
     expect(effectQueryOptions.enabled).toBe(true);
@@ -76,15 +76,14 @@ describe("infiniteQueryOptions", () => {
 
   test("should work with skip token", async () => {
     const { eq } = testContext();
-    // biome-ignore lint/style/noMagicNumbers: test
     const enabled = Math.random() < 0.5;
     const defaultOptions = queryOptions({
-      queryKey: ["test"],
       queryFn: enabled ? async () => "test" : skipToken,
+      queryKey: ["test"],
     });
     const effectQueryOptions = eq.queryOptions({
-      queryKey: ["test"],
       queryFn: enabled ? () => Effect.succeed("test") : skipToken,
+      queryKey: ["test"],
     });
     const { result: defaultResult } = await renderHook(
       () => useQuery(defaultOptions),
@@ -113,12 +112,12 @@ describe("infiniteQueryOptions", () => {
   test("should work with undefined initial data", async () => {
     const { eq } = testContext();
     const defaultOptions = queryOptions({
-      queryKey: ["test"],
       queryFn: () => "test",
+      queryKey: ["test"],
     });
     const effectQueryOptions = eq.queryOptions({
-      queryKey: ["test"],
       queryFn: () => Effect.succeed("test"),
+      queryKey: ["test"],
     });
     const { result: defaultResult } = await renderHook(
       () => useQuery(defaultOptions),
@@ -147,12 +146,12 @@ describe("infiniteQueryOptions", () => {
   test("should work with suspenseQuery", async () => {
     const { eq } = testContext();
     const defaultOptions = queryOptions({
-      queryKey: ["test"],
       queryFn: () => "test",
+      queryKey: ["test"],
     });
     const effectQueryOptions = eq.queryOptions({
-      queryKey: ["test"],
       queryFn: () => Effect.succeed("test"),
+      queryKey: ["test"],
     });
     const { result: defaultResult } = await renderHook(
       () => useSuspenseQuery(defaultOptions),

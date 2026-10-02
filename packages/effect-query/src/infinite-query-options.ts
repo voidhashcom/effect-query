@@ -261,7 +261,6 @@ export function createEffectInfiniteQueryOptions<Input>(
         typeof inputOptions.queryFn === "symbol" &&
         inputOptions.queryFn !== skipToken
       ) {
-        // biome-ignore lint/suspicious/noConsole: console.warn is used to warn the user about the mistake
         console.warn(
           "You passed a symbol as query function, but it is not the skipToken symbol. This is probably a mistake."
         );
@@ -280,14 +279,18 @@ export function createEffectInfiniteQueryOptions<Input>(
         }
       );
       return Exit.match(result, {
-        onSuccess: (value) => value as TQueryFnData,
         onFailure: (cause) => {
           const errorOption = Cause.findErrorOption(cause);
           if (Option.isSome(errorOption)) {
-            throw new EffectQueryFailure(Cause.pretty(cause), errorOption.value, cause);
+            throw new EffectQueryFailure(
+              Cause.pretty(cause),
+              errorOption.value,
+              cause
+            );
           }
           throw new EffectQueryDefect(Cause.pretty(cause), cause);
         },
+        onSuccess: (value) => value as TQueryFnData,
       });
     };
 
