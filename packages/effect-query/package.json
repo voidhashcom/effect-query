@@ -1,14 +1,14 @@
 {
   "name": "effect-query",
   "version": "1.1.0",
-  "description": "Effect adapter for Tanstack Query",
+  "description": "Effect adapter for TanStack Query (React, Vue, Solid and Svelte)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/voidhashcom/effect-query.git",
     "directory": "packages/effect-query"
   },
   "license": "MIT",
-  "author": "Dominik Vít <dominik@voidhash.com>",
+  "author": "Dominik V\u00edt <dominik@voidhash.com>",
   "exports": {
     ".": {
       "import": {
@@ -19,7 +19,18 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react.d.mts",
+        "default": "./dist/react.mjs"
+      },
+      "require": {
+        "types": "./dist/react.d.cts",
+        "default": "./dist/react.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -31,8 +42,10 @@
   "scripts": {
     "build": "tsdown",
     "lint": "biome check .",
-    "test": "vitest --typecheck",
-    "typecheck": "tsc --noEmit --pretty"
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit --pretty && pnpm typecheck:ts6",
+    "test:watch": "vitest",
+    "typecheck:ts6": "node ./node_modules/typescript6/bin/tsc --noEmit --pretty"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
@@ -46,6 +59,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tsdown": "0.23.0",
+    "typescript6": "npm:typescript@^6.0.3",
     "ultracite": "^7.12.2",
     "vitest": "^5.0.3",
     "vitest-browser-react": "^2.3.0"
@@ -54,5 +68,13 @@
     "@tanstack/react-query": "^5.104.0",
     "effect": "^4.0.0",
     "react": ">=18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   }
 }

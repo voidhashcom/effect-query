@@ -1,8 +1,10 @@
 {
   "extends": "./tsconfig.build.json",
-  "include": ["src", "test"],
+  "include": ["src", "test", "*.config.*"],
+  "exclude": [],
   "compilerOptions": {
     "allowJs": false,
+    "jsx": "react-jsx",
     "strictNullChecks": true
   }
 }

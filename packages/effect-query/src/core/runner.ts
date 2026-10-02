@@ -3,7 +3,11 @@ import type { ManagedRuntime } from "effect/ManagedRuntime";
 
 export class EffectQueryRunner<
   // biome-ignore lint/suspicious/noExplicitAny: generic
-  TManagedRuntime extends ManagedRuntime<any, never>,
+  TManagedRuntime extends ManagedRuntime<any, never> = ManagedRuntime<
+    // biome-ignore lint/suspicious/noExplicitAny: generic
+    any,
+    never
+  >,
 > {
   readonly runtime: TManagedRuntime;
   constructor(runtime: TManagedRuntime) {

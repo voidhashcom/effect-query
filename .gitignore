@@ -50,3 +50,4 @@ vite.config.ts.timestamp-*
 .turbo
 
 __screenshots__/
+.vitest/

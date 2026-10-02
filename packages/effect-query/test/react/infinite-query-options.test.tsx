@@ -7,7 +7,7 @@ import {
 import { Effect, Layer } from "effect";
 import { describe, expect, test } from "vitest";
 import { renderHook } from "vitest-browser-react";
-import { createEffectQuery } from "../src";
+import { createEffectQuery } from "../../src";
 import { afterQueryFinish, HooksWrapper } from "./_helpers";
 
 describe("infiniteQueryOptions", () => {
@@ -87,20 +87,27 @@ describe("infiniteQueryOptions", () => {
     );
   });
 
-  test("skip token - should not load with skipToken", () => {
+  test("skip token - passes skipToken through and does not fetch", async () => {
     const { eq } = testContext();
 
     const effectQueryOptions = eq.infiniteQueryOptions({
       getNextPageParam: () => 1,
       initialPageParam: 0,
       queryFn: skipToken,
-      queryKey: ["test"],
+      queryKey: ["infinite-skip-token"],
     });
 
-    expect(effectQueryOptions.enabled).toBe(false);
+    expect(effectQueryOptions.queryFn).toBe(skipToken);
+
+    const { result } = await renderHook(
+      () => useInfiniteQuery(effectQueryOptions),
+      { wrapper: HooksWrapper }
+    );
+    expect(result.current.status).toBe("pending");
+    expect(result.current.fetchStatus).toBe("idle");
   });
 
-  test("skip token - should not load with skipToken", () => {
+  test("skip token - wraps the effect into a promise returning queryFn", () => {
     const { eq } = testContext();
 
     const effectQueryOptions = eq.infiniteQueryOptions({
@@ -110,7 +117,8 @@ describe("infiniteQueryOptions", () => {
       queryKey: ["test"],
     });
 
-    expect(effectQueryOptions.enabled).toBe(true);
+    expect(typeof effectQueryOptions.queryFn).toBe("function");
+    expect(effectQueryOptions.enabled).toBeUndefined();
   });
 
   test("should work with unused skip token", async () => {

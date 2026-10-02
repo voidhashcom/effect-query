@@ -24,6 +24,16 @@ npm install @tanstack/react-query effect
 
 ```
 
+## Framework support
+
+`effect-query` works with every TanStack Query adapter. Import from the entry point matching your framework:
+
+| Framework | Entry point                               | TanStack Query package  |
+| --------- | ----------------------------------------- | ----------------------- |
+| React     | `effect-query` (or `effect-query/react`)  | `@tanstack/react-query` |
+
+Every adapter exposes the same `createEffectQuery` / `createEffectQueryFromManagedRuntime` API and returns plain TanStack Query options. The success type of your Effect becomes `data`, and its failure channel becomes the `error` type (`EffectQueryFailure<E> | EffectQueryDefect<unknown>`), so both are inferred end to end in `useQuery`, `useSuspenseQuery`, `useInfiniteQuery`, `useMutation`, `useQueries` and on the `QueryClient` (`getQueryData`, `fetchQuery`, ...).
+
 # Initialize
 
 ```tsx
@@ -157,6 +167,16 @@ function Example() {
 ```
 
 Match can be also used to handle errors during mutations.
+
+`EffectQueryFailure` and `EffectQueryDefect` are exported as classes, so you can also narrow with `instanceof`:
+
+```tsx
+import { EffectQueryFailure } from "effect-query";
+
+if (error instanceof EffectQueryFailure) {
+  error.failure; // QueryError | TestError
+}
+```
 
 ## Mutation Error Handling
 
