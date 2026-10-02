@@ -13,15 +13,50 @@ export interface QueryClientLike {
 
 export interface QueryKeyOwner {
   readonly queryKey: readonly unknown[];
+  readonly queryKeyHashFn?:
+    | ((queryKey: readonly unknown[]) => string)
+    | undefined;
 }
 
 /** Normalises the `query` prop of the error boundaries, which accepts one or many options. */
+export const toQueryKeyOwners = (
+  query: QueryKeyOwner | readonly QueryKeyOwner[]
+): readonly QueryKeyOwner[] =>
+  Array.isArray(query) ? query : [query as QueryKeyOwner];
+
+/** The query keys of the `query` prop of the error boundaries. */
 export const toQueryKeys = (
   query: QueryKeyOwner | readonly QueryKeyOwner[]
 ): readonly (readonly unknown[])[] =>
-  Array.isArray(query)
-    ? query.map((options: QueryKeyOwner) => options.queryKey)
-    : [(query as QueryKeyOwner).queryKey];
+  toQueryKeyOwners(query).map((options) => options.queryKey);
+
+/**
+ * A stable identity for the guarded queries, used to reset a boundary when it starts guarding
+ * other queries. Each query is hashed with its own `queryKeyHashFn`, like TanStack Query does, so
+ * keys that the default hash cannot handle (e.g. containing a `BigInt`) work.
+ */
+export const toQueryHash = (
+  owners: readonly QueryKeyOwner[],
+  defaultHash: (queryKey: readonly unknown[]) => string
+): string =>
+  owners
+    .map((options) => (options.queryKeyHashFn ?? defaultHash)(options.queryKey))
+    .join("\n");
+
+/** The error currently stored on the first of the given queries that has one. */
+export const findErrorOfQueries = (
+  queryClient: QueryClientLike,
+  queryKeys: readonly (readonly unknown[])[]
+): unknown => {
+  for (const queryKey of queryKeys) {
+    const error = queryClient.getQueryCache().find({ exact: true, queryKey })
+      ?.state.error;
+    if (error !== null && error !== undefined) {
+      return error;
+    }
+  }
+  return undefined;
+};
 
 /**
  * Whether `error` is the error currently stored on one of the given queries.

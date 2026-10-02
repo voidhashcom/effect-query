@@ -218,6 +218,64 @@ describe("QueryErrorBoundary", () => {
     await screen.getByText("switch").click();
     await expect.element(screen.getByText("user:Ripley")).toBeInTheDocument();
   });
+
+  // While the fallback is shown the failed query has no observers. Removing, garbage collecting or
+  // refetching it must not turn the error that was caught into an error of someone else.
+  const renderRerenderable = async () => {
+    recovered = false;
+    const Rerenderable = () => {
+      const [renders, setRenders] = useState(0);
+      return (
+        <Outer>
+          <button onClick={() => setRenders(renders + 1)} type="button">
+            rerender {renders}
+          </button>
+          <QueryErrorBoundary
+            fallback={() => <p>inner fallback</p>}
+            query={userOptions("missing")}
+          >
+            <Suspense fallback={<p>loading</p>}>
+              <User id="missing" />
+            </Suspense>
+          </QueryErrorBoundary>
+        </Outer>
+      );
+    };
+    return await renderWithClient(<Rerenderable />);
+  };
+
+  test("keeps the fallback when the failed query is removed from the cache", async () => {
+    const { queryClient, screen } = await renderRerenderable();
+    await expect
+      .element(screen.getByText("inner fallback"))
+      .toBeInTheDocument();
+
+    queryClient.removeQueries({ queryKey: userOptions("missing").queryKey });
+    await screen.getByText("rerender 0").click();
+
+    await expect.element(screen.getByText("rerender 1")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("inner fallback"))
+      .toBeInTheDocument();
+  });
+
+  test("keeps the fallback when the failed query is refetched with a new error", async () => {
+    const { queryClient, screen } = await renderRerenderable();
+    await expect
+      .element(screen.getByText("inner fallback"))
+      .toBeInTheDocument();
+    const options = userOptions("missing");
+    const caught = queryClient.getQueryState(options.queryKey)?.error;
+
+    await queryClient.fetchQuery(options).catch(() => undefined);
+    expect(queryClient.getQueryState(options.queryKey)?.error).not.toBe(caught);
+    await screen.getByText("rerender 0").click();
+
+    await expect.element(screen.getByText("rerender 1")).toBeInTheDocument();
+    await expect
+      .element(screen.getByText("inner fallback"))
+      .toBeInTheDocument();
+  });
 });
 
 describe("isQueryError", () => {
@@ -231,5 +289,44 @@ describe("isQueryError", () => {
     expect(isQueryError(queryClient, options, error)).toBe(true);
     expect(isQueryError(queryClient, userOptions("other"), error)).toBe(false);
     expect(isQueryError(queryClient, options, new Error("nope"))).toBe(false);
+  });
+});
+
+// TanStack Query's default hash cannot serialize a `BigInt`, such keys need a `queryKeyHashFn`.
+const bigintHash = (key: readonly unknown[]) =>
+  JSON.stringify(key, (_, value: unknown) =>
+    typeof value === "bigint" ? `${value}n` : value
+  );
+
+const bigUserOptions = eq.queryOptions({
+  queryFn: () => Effect.fail(new NotFound({ id: "big" })),
+  queryKey: ["big-user", 1n],
+  queryKeyHashFn: bigintHash,
+});
+
+const BigUser = () => {
+  const { data } = useSuspenseQuery(bigUserOptions);
+  return <p>{String(data)}</p>;
+};
+
+describe("QueryErrorBoundary with a custom queryKeyHashFn", () => {
+  test("guards queries whose keys the default hash cannot serialize", async () => {
+    const { screen } = await renderWithClient(
+      <QueryErrorBoundary
+        fallback={({ error }) =>
+          error.match({
+            NotFound: (notFound) => <p>big: {notFound.id}</p>,
+            OrElse: () => <p>other</p>,
+          })
+        }
+        query={bigUserOptions}
+      >
+        <Suspense fallback={<p>loading</p>}>
+          <BigUser />
+        </Suspense>
+      </QueryErrorBoundary>
+    );
+
+    await expect.element(screen.getByText("big: big")).toBeInTheDocument();
   });
 });

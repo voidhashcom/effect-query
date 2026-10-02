@@ -28,8 +28,21 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint
+
       - name: Build
         run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Install Playwright Chromium
+        working-directory: packages/effect-query
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test
+        run: pnpm test
 
       - name: Determine npm tag
         id: determine_npm_tag

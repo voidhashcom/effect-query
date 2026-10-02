@@ -9,6 +9,7 @@
   },
   "license": "MIT",
   "author": "Dominik V\u00edt <dominik@voidhash.com>",
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": {

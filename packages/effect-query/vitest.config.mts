@@ -19,6 +19,13 @@ export default defineConfig({
   test: {
     projects: [
       {
+        test: {
+          environment: "node",
+          include: ["test/core/**/*.test.ts"],
+          name: "core",
+        },
+      },
+      {
         plugins: [react()],
         test: {
           browser: browser(),

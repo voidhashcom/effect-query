@@ -240,3 +240,41 @@ describe("isQueryError", () => {
     expect(isQueryError(queryClient, options, new Error("nope"))).toBe(false);
   });
 });
+
+// TanStack Query's default hash cannot serialize a `BigInt`, such keys need a `queryKeyHashFn`.
+const bigintHash = (key: readonly unknown[]) =>
+  JSON.stringify(key, (_, value: unknown) =>
+    typeof value === "bigint" ? `${value}n` : value
+  );
+
+const bigUserOptions = eq.queryOptions({
+  queryFn: () => Effect.fail(new NotFound({ id: "big" })),
+  queryKey: ["solid-big-user", 1n],
+  queryKeyHashFn: bigintHash,
+  throwOnError: true,
+});
+
+const BigUser = (): JSX.Element => {
+  const query = useQuery(() => bigUserOptions);
+  return (() => String(query.data)) as unknown as JSX.Element;
+};
+
+describe("QueryErrorBoundary with a custom queryKeyHashFn", () => {
+  test("guards queries whose keys the default hash cannot serialize", async () => {
+    const container = mount(() =>
+      boundary({
+        get children() {
+          return suspended(() => createComponent(BigUser, {}));
+        },
+        fallback: ({ error }) =>
+          error.match({
+            NotFound: (notFound) => `big: ${notFound.id}`,
+            OrElse: () => "other",
+          }),
+        query: bigUserOptions,
+      })
+    );
+
+    await vi.waitFor(() => expect(container.textContent).toBe("big: big"));
+  });
+});
