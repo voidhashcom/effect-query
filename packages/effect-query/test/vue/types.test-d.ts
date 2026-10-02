@@ -14,6 +14,8 @@ import {
   createEffectQuery,
   type EffectQueryDefect,
   type EffectQueryFailure,
+  isQueryError,
+  QueryErrorBoundary,
 } from "../../src/vue";
 
 class NotFound extends Data.TaggedError("NotFound")<{ id: string }> {}
@@ -297,5 +299,52 @@ describe("mutationOptions", () => {
     expectTypeOf(
       error.value
     ).toEqualTypeOf<EffectQueryDefect<unknown> | null>();
+  });
+});
+
+describe("QueryErrorBoundary", () => {
+  const listOptions = eq.infiniteQueryOptions({
+    getNextPageParam: (lastPage) => lastPage.next,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }: { pageParam: number }) => listUsers(pageParam),
+    queryKey: ["users"],
+  });
+
+  test("types the fallback slot error from the bound query", () => {
+    const boundary = new QueryErrorBoundary({ query: userOptions("1") });
+    type FallbackProps = Parameters<typeof boundary.$slots.fallback>[0];
+    expectTypeOf<FallbackProps["error"]>().toEqualTypeOf<UserError>();
+    expectTypeOf<FallbackProps["reset"]>().toEqualTypeOf<() => void>();
+  });
+
+  test("unions the errors of several queries", () => {
+    const boundary = new QueryErrorBoundary({
+      query: [userOptions("1"), listOptions],
+    });
+    type FallbackProps = Parameters<typeof boundary.$slots.fallback>[0];
+    expectTypeOf<FallbackProps["error"]>().toEqualTypeOf<
+      | EffectQueryFailure<NotFound | Forbidden>
+      | EffectQueryFailure<Forbidden>
+      | EffectQueryDefect<unknown>
+    >();
+  });
+
+  test("reads the error from options with a reactive query key", () => {
+    const id = ref("1");
+    const options = eq.queryOptions({
+      queryFn: () => getUser(id.value),
+      queryKey: ["user", id],
+    });
+    const error: unknown = null;
+    if (isQueryError(queryClient, options, error)) {
+      expectTypeOf(error).toEqualTypeOf<UserError>();
+    }
+  });
+
+  test("isQueryError narrows to the query error", () => {
+    const error: unknown = null;
+    if (isQueryError(queryClient, userOptions("1"), error)) {
+      expectTypeOf(error).toEqualTypeOf<UserError>();
+    }
   });
 });

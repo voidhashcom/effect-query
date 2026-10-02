@@ -14,6 +14,8 @@ import {
   createEffectQuery,
   type EffectQueryDefect,
   type EffectQueryFailure,
+  isQueryError,
+  QueryErrorBoundary,
 } from "../../src/solid";
 
 class NotFound extends Data.TaggedError("NotFound")<{ id: string }> {}
@@ -297,5 +299,46 @@ describe("mutationOptions", () => {
     expectTypeOf(
       mutation.error
     ).toEqualTypeOf<EffectQueryDefect<unknown> | null>();
+  });
+});
+
+describe("QueryErrorBoundary", () => {
+  const listOptions = eq.infiniteQueryOptions({
+    getNextPageParam: (lastPage) => lastPage.next,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }: { pageParam: number }) => listUsers(pageParam),
+    queryKey: ["users"],
+  });
+
+  test("types the fallback error from the bound query", () => {
+    QueryErrorBoundary({
+      fallback: ({ error, reset }) => {
+        expectTypeOf(error).toEqualTypeOf<UserError>();
+        expectTypeOf(reset).toEqualTypeOf<() => void>();
+        return null;
+      },
+      query: userOptions("1"),
+    });
+  });
+
+  test("unions the errors of several queries", () => {
+    QueryErrorBoundary({
+      fallback: ({ error }) => {
+        expectTypeOf(error).toEqualTypeOf<
+          | EffectQueryFailure<NotFound | Forbidden>
+          | EffectQueryFailure<Forbidden>
+          | EffectQueryDefect<unknown>
+        >();
+        return null;
+      },
+      query: [userOptions("1"), listOptions],
+    });
+  });
+
+  test("isQueryError narrows to the query error", () => {
+    const error: unknown = null;
+    if (isQueryError(queryClient, userOptions("1"), error)) {
+      expectTypeOf(error).toEqualTypeOf<UserError>();
+    }
   });
 });

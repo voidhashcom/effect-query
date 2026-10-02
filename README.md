@@ -324,6 +324,48 @@ export default function UpdateUserPage({ id }: { id: string }) {
 }
 ```
 
+## Suspense Error Handling
+
+With `useSuspenseQuery` (or `throwOnError`) errors are thrown to the nearest error boundary, where their type is lost. `QueryErrorBoundary` is bound to the query options it guards, so its `fallback` receives the same typed error as `useQuery` would:
+
+```tsx
+import { QueryErrorBoundary } from "effect-query";
+
+function UserPage({ id }: { id: string }) {
+  return (
+    <QueryErrorBoundary
+      query={userOptions(id)} // or several: query={[userOptions(id), postsOptions(id)]}
+      fallback={({ error, reset }) =>
+        error.match({
+          NotFound: (notFound) => <p>User {notFound.id} does not exist</p>,
+          OrElse: () => <button onClick={reset}>Retry</button>,
+        })
+      }
+    >
+      <Suspense fallback={<Spinner />}>
+        <UserProfile id={id} /> {/* useSuspenseQuery(userOptions(id)) */}
+      </Suspense>
+    </QueryErrorBoundary>
+  );
+}
+```
+
+- Only errors produced by the given queries are handled. Anything else is rethrown to the next error boundary up the tree, so the `fallback` type is always accurate.
+- `reset` refetches the failed queries (it uses TanStack Query's `QueryErrorResetBoundary`).
+- The boundary resets on its own when the `queryKey` of `query` changes, e.g. when navigating between ids.
+
+`QueryErrorBoundary` is also exported from `effect-query/solid` (wraps Solid's `ErrorBoundary`, set `throwOnError: true` on the queries) and `effect-query/vue` (uses `onErrorCaptured`; the error is passed to the `#fallback="{ error, reset }"` slot; set `throwOnError: true` so `await query.suspense()` rejects).
+
+For error boundaries you don't own (a router's error component, Svelte's `<svelte:boundary>`, ...), every entry point exports the underlying guard:
+
+```ts
+import { isQueryError } from "effect-query";
+
+if (isQueryError(queryClient, userOptions(id), error)) {
+  error; // EffectQueryFailure<NotFound> | EffectQueryDefect<unknown>
+}
+```
+
 # Usage with Effect HttpApi
 
 ```tsx

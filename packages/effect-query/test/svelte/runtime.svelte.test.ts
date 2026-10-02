@@ -12,6 +12,7 @@ import {
   createEffectQueryFromManagedRuntime,
   EffectQueryDefect,
   EffectQueryFailure,
+  isQueryError,
 } from "../../src/svelte";
 
 class NotFound extends Data.TaggedError("NotFound")<{ id: string }> {}
@@ -258,5 +259,33 @@ describe("svelte runtime", () => {
     await vi.waitFor(() => expect(result.isError).toBe(true));
     expect(result.error).toBeInstanceOf(EffectQueryFailure);
     expect(onError).toHaveBeenCalledWith("missing");
+  });
+});
+
+describe("isQueryError", () => {
+  const eq = createEffectQuery(GreeterLive);
+  const options = eq.queryOptions({
+    queryFn: () => greet("missing"),
+    queryKey: ["greet", "missing", "guard"],
+  });
+
+  test("accepts the error a fetch rejects with, as seen by <svelte:boundary>", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const error = await queryClient.fetchQuery(options).catch((e) => e);
+
+    expect(isQueryError(queryClient, options, error)).toBe(true);
+    expect(
+      isQueryError(
+        queryClient,
+        eq.queryOptions({
+          queryFn: () => greet("other"),
+          queryKey: ["greet", "other"],
+        }),
+        error
+      )
+    ).toBe(false);
+    expect(isQueryError(queryClient, options, new Error("nope"))).toBe(false);
   });
 });

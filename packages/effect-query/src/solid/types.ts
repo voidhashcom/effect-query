@@ -11,4 +11,5 @@ export interface EffectQuery<Input> {
 export type * from "../core/types";
 export type * from "./infinite-query-options";
 export type * from "./mutation-options";
+export type * from "./query-error-boundary";
 export type * from "./query-options";
