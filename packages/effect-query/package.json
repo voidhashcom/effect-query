@@ -1,6 +1,6 @@
 {
   "name": "effect-query",
-  "version": "1.1.0",
+  "version": "2.0.0-alpha.1",
   "description": "Effect adapter for TanStack Query (React, Vue, Solid and Svelte)",
   "repository": {
     "type": "git",

@@ -24,6 +24,8 @@ npm install @tanstack/react-query effect
 
 ```
 
+> Vue, Solid and Svelte support (and the type inference improvements described below) ship in the `2.0.0` prerelease: `npm install effect-query@alpha`.
+
 ## Framework support
 
 `effect-query` works with every TanStack Query adapter. Import from the entry point matching your framework:

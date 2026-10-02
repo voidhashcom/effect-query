@@ -36,8 +36,8 @@ jobs:
         shell: bash
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          if [[ "$TAG" =~ -(next|canary|beta|rc) ]]; then
-            # Extract pre-release tag (e.g., beta, rc)
+          if [[ "$TAG" =~ -(next|canary|alpha|beta|rc) ]]; then
+            # Extract pre-release tag (e.g., alpha, beta, rc)
             NPM_TAG=${BASH_REMATCH[1]}
           else
             # Check if the commit is on the main branch
