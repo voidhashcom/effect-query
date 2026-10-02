@@ -3,6 +3,7 @@ import { defineConfig } from "tsdown";
 export const input = {
   index: "./src/index.ts",
   react: "./src/react/index.ts",
+  vue: "./src/vue/index.ts",
 };
 
 export default defineConfig({
