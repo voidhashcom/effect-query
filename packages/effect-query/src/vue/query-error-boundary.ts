@@ -53,8 +53,14 @@ export type InferQueryOptionsError<TQuery extends QueryErrorSource> =
     ? InferSingleQueryError<TOptions>
     : InferSingleQueryError<TQuery>;
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  Object.prototype.toString.call(value) === "[object Object]";
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (Object.prototype.toString.call(value) !== "[object Object]") {
+    return false;
+  }
+
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === null || prototype === Object.prototype;
+};
 
 /** Resolves refs and getters anywhere in a query key, like vue-query does before hashing it. */
 const unwrapQueryKey = (value: unknown): unknown => {
