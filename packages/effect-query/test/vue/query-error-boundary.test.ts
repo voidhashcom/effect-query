@@ -263,6 +263,24 @@ describe("QueryErrorBoundary", () => {
 });
 
 describe("isQueryError", () => {
+  test("preserves class instances in query keys", async () => {
+    class UserId {
+      toJSON() {
+        return "missing";
+      }
+    }
+
+    const queryClient = new QueryClient();
+    const options = eq.queryOptions({
+      queryFn: () => Effect.fail(new NotFound({ id: "missing" })),
+      queryKey: ["vue-boundary-user", new UserId()],
+    });
+    await queryClient.fetchQuery(options).catch(() => undefined);
+    const error = queryClient.getQueryState(options.queryKey)?.error;
+
+    expect(isQueryError(queryClient, options, error)).toBe(true);
+  });
+
   test("only accepts the error stored on the query", async () => {
     recovered = false;
     const queryClient = new QueryClient();
